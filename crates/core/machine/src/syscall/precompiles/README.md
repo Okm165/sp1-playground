@@ -225,7 +225,8 @@ pub fn default_syscall_map() -> HashMap<SyscallCode, Arc<dyn Syscall>> {
 
 ## Write Unit Tests for the New Precompile
 ### Create a New SP1 Test Package
-Create a new SP1 crate for your custom precompile test package inside the directory `sp1/tests`. An example `Cargo.toml` for this may look like
+Create a new SP1 crate for your custom precompile test package inside the directory `sp1/crates/test-artifacts/programs`.
+An example `Cargo.toml` for this may look like
 ```toml
 [workspace]
 [package]
@@ -235,8 +236,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-sp1-zkvm = { path = "../../zkvm/entrypoint" }
-sp1-derive = { path = "../../derive" }
+sp1-zkvm = { path = "../../../zkvm/entrypoint" }
+sp1-derive = { path = "../../../derive" }
 num-bigint = "0.4.6"
 rand = "0.8.5"
 ```

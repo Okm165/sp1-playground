@@ -917,7 +917,7 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
     }
 }
 
-#[cfg(any(test, feature = "export-tests"))]
+#[cfg(test)]
 pub mod tests {
 
     use std::{
@@ -932,10 +932,9 @@ pub mod tests {
     use p3_field::PrimeField32;
     use sp1_core_machine::io::SP1Stdin;
 
-    #[cfg(test)]
     use serial_test::serial;
-    #[cfg(test)]
     use sp1_core_machine::utils::setup_logger;
+    use test_artifacts::{FIBONACCI_ELF, KECCAK256_ELF, VERIFY_PROOF_ELF};
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Test {
@@ -1042,11 +1041,10 @@ pub mod tests {
 
     pub fn test_e2e_with_deferred_proofs_prover<C: SP1ProverComponents>() -> Result<()> {
         // Test program which proves the Keccak-256 hash of various inputs.
-        let keccak_elf = include_bytes!("../../../tests/keccak256/elf/riscv32im-succinct-zkvm-elf");
+        let keccak_elf = KECCAK256_ELF;
 
         // Test program which verifies proofs of a vkey and a list of committed inputs.
-        let verify_elf =
-            include_bytes!("../../../tests/verify-proof/elf/riscv32im-succinct-zkvm-elf");
+        let verify_elf = VERIFY_PROOF_ELF;
 
         tracing::info!("initializing prover");
         let prover: SP1Prover = SP1Prover::new();
@@ -1129,13 +1127,12 @@ pub mod tests {
     #[test]
     #[serial]
     fn test_e2e() -> Result<()> {
-        let elf = include_bytes!("../../../tests/fibonacci/elf/riscv32im-succinct-zkvm-elf");
         setup_logger();
         let opts = SP1ProverOpts::default();
         // TODO(mattstam): We should Test::Plonk here, but this uses the existing
         // docker image which has a different API than the current. So we need to wait until the
         // next release (v1.2.0+), and then switch it back.
-        test_e2e_prover::<DefaultProverComponents>(elf, opts, Test::Wrap)
+        test_e2e_prover::<DefaultProverComponents>(FIBONACCI_ELF, opts, Test::Wrap)
     }
 
     /// Tests an end-to-end workflow of proving a program across the entire proof generation

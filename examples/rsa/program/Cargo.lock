@@ -380,6 +380,8 @@ dependencies = [
 [[package]]
 name = "rsa"
 version = "0.9.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d0e5124fcb30e76a7e79bfee683a2746db83784b86289f6251b54b7950a0dfc"
 dependencies = [
  "const-oid",
  "digest",
@@ -390,7 +392,6 @@ dependencies = [
  "pkcs8",
  "rand_core",
  "signature",
- "sp1-derive",
  "spki",
  "subtle",
  "zeroize",
@@ -485,17 +486,6 @@ checksum = "460a9ed63cdf03c1b9847e8a12a5f5ba19c4efd5869e4a737e05be25d7c427e5"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
-]
-
-[[package]]
-name = "sp1-derive"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74d06fdae1dc74a9085b155d12180825653e530983262b8ad2e57fe15551d17a"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
