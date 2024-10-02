@@ -11,7 +11,10 @@ use crate::{
         MemoryChipType, MemoryLocalChip, MemoryProgramChip, NUM_LOCAL_MEMORY_ENTRIES_PER_ROW,
     },
     riscv::MemoryChipType::{Finalize, Initialize},
-    syscall::precompiles::fptower::{Fp2AddSubAssignChip, Fp2MulAssignChip, FpOpChip},
+    syscall::precompiles::{
+        fptower::{Fp2AddSubAssignChip, Fp2MulAssignChip, FpOpChip},
+        u256x2048_mul::U256x2048MulChip,
+    },
 };
 use hashbrown::{HashMap, HashSet};
 use p3_field::PrimeField32;
@@ -138,6 +141,7 @@ pub enum RiscvAir<F: PrimeField32> {
     Bn254Fp2Mul(Fp2MulAssignChip<Bn254BaseField>),
     /// A precompile for BN-254 fp2 addition/subtraction.
     Bn254Fp2AddSub(Fp2AddSubAssignChip<Bn254BaseField>),
+    U256x2048Mul(U256x2048MulChip),
 }
 
 impl<F: PrimeField32> RiscvAir<F> {
@@ -247,6 +251,10 @@ impl<F: PrimeField32> RiscvAir<F> {
         let uint256_mul = Chip::new(RiscvAir::Uint256Mul(Uint256MulChip::default()));
         costs.insert(RiscvAirDiscriminants::Uint256Mul, uint256_mul.cost());
         chips.push(uint256_mul);
+
+        let u256x2048_mul = Chip::new(RiscvAir::U256x2048Mul(U256x2048MulChip::default()));
+        costs.insert(RiscvAirDiscriminants::U256x2048Mul, u256x2048_mul.cost());
+        chips.push(u256x2048_mul);
 
         let bls12381_fp = Chip::new(RiscvAir::Bls12381Fp(FpOpChip::<Bls12381BaseField>::new()));
         costs.insert(RiscvAirDiscriminants::Bls12381Fp, bls12381_fp.cost());
