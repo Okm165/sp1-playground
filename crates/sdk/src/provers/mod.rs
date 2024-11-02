@@ -144,32 +144,34 @@ pub trait Prover<C: SP1ProverComponents>: Send + Sync {
                     .verify_compressed(proof, vkey)
                     .map_err(SP1VerificationError::Recursion)
             }
-            SP1Proof::Plonk(proof) => self
-                .sp1_prover()
-                .verify_plonk_bn254(
-                    proof,
-                    vkey,
-                    &bundle.public_values,
-                    &if sp1_prover::build::sp1_dev_mode() {
-                        sp1_prover::build::plonk_bn254_artifacts_dev_dir()
-                    } else {
-                        try_install_circuit_artifacts("plonk")
-                    },
-                )
-                .map_err(SP1VerificationError::Plonk),
-            SP1Proof::Groth16(proof) => self
-                .sp1_prover()
-                .verify_groth16_bn254(
-                    proof,
-                    vkey,
-                    &bundle.public_values,
-                    &if sp1_prover::build::sp1_dev_mode() {
-                        sp1_prover::build::groth16_bn254_artifacts_dev_dir()
-                    } else {
-                        try_install_circuit_artifacts("groth16")
-                    },
-                )
-                .map_err(SP1VerificationError::Groth16),
+            SP1Proof::Plonk(proof) => {
+                let plonk_vk = if sp1_prover::build::sp1_dev_mode() {
+                    std::fs::read(
+                        sp1_prover::build::plonk_bn254_artifacts_dev_dir().join("plonk_vk.bin"),
+                    )
+                    .unwrap()
+                } else {
+                    std::fs::read(try_install_circuit_artifacts("plonk").join("plonk_vk.bin"))
+                        .unwrap()
+                };
+                self.sp1_prover()
+                    .verify_plonk_bn254(proof, vkey, &bundle.public_values, &plonk_vk)
+                    .map_err(SP1VerificationError::Plonk)
+            }
+            SP1Proof::Groth16(proof) => {
+                let groth16_vk = if sp1_prover::build::sp1_dev_mode() {
+                    std::fs::read(
+                        sp1_prover::build::groth16_bn254_artifacts_dev_dir().join("groth16_vk.bin"),
+                    )
+                    .unwrap()
+                } else {
+                    std::fs::read(try_install_circuit_artifacts("groth16").join("groth16_vk.bin"))
+                        .unwrap()
+                };
+                self.sp1_prover()
+                    .verify_groth16_bn254(proof, vkey, &bundle.public_values, &groth16_vk)
+                    .map_err(SP1VerificationError::Groth16)
+            }
         }
     }
 }

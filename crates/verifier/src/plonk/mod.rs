@@ -13,14 +13,15 @@ mod verify;
 
 pub(crate) mod error;
 
+use bn::Fr;
 pub(crate) use converter::{load_plonk_proof_from_bytes, load_plonk_verifying_key_from_bytes};
 pub(crate) use proof::PlonkProof;
-pub(crate) use verify::verify_plonk_raw;
+pub(crate) use verify::verify_plonk_algebraic;
 
 use error::PlonkError;
 use sha2::{Digest, Sha256};
 
-use crate::{bn254_public_values, decode_sp1_vkey_hash};
+use crate::{decode_sp1_vkey_hash, hash_public_inputs};
 /// A verifier for Plonk zero-knowledge proofs.
 #[derive(Debug)]
 pub struct PlonkVerifier;
@@ -51,7 +52,7 @@ impl PlonkVerifier {
         sp1_public_inputs: &[u8],
         sp1_vkey_hash: &str,
         plonk_vk: &[u8],
-    ) -> Result<bool, PlonkError> {
+    ) -> Result<(), PlonkError> {
         // Hash the vk and get the first 4 bytes.
         let plonk_vk_hash: [u8; 4] = Sha256::digest(plonk_vk)[..4].try_into().unwrap();
 
@@ -65,11 +66,43 @@ impl PlonkVerifier {
         }
 
         let sp1_vkey_hash = decode_sp1_vkey_hash(sp1_vkey_hash)?;
-        let public_inputs = bn254_public_values(&sp1_vkey_hash, sp1_public_inputs);
 
-        let proof = load_plonk_proof_from_bytes(&proof[4..]).unwrap();
+        Self::verify_bytes(
+            &proof[4..],
+            &sp1_vkey_hash,
+            &hash_public_inputs(sp1_public_inputs),
+            plonk_vk,
+        )
+    }
+
+    /// Verifies a PLONK proof using raw byte inputs.
+    ///
+    /// This is a lower-level verification method that works directly with raw bytes rather than
+    /// SP1 native inputs. It's used internally by [`verify`] but can also be called directly
+    /// if you already have the required byte arrays.
+    ///
+    /// # Arguments
+    ///
+    /// * `proof` - The raw PLONK proof bytes (without the 4-byte vkey hash prefix)
+    /// * `sp1_vkey_hash` - The 32-byte SP1 verification key hash
+    /// * `public_inputs_hash` - The 32-byte hash of the public inputs
+    /// * `plonk_vk` - The PLONK verifying key bytes
+    ///
+    /// # Returns
+    ///
+    /// A [`Result`] containing unit `()` if the proof is valid,
+    /// or a [`PlonkError`] if verification fails.
+    pub fn verify_bytes(
+        proof: &[u8],
+        sp1_vkey_hash: &[u8; 32],
+        public_inputs_hash: &[u8; 32],
+        plonk_vk: &[u8],
+    ) -> Result<(), PlonkError> {
+        let proof = load_plonk_proof_from_bytes(proof).unwrap();
         let plonk_vk = load_plonk_verifying_key_from_bytes(plonk_vk).unwrap();
 
-        verify_plonk_raw(&plonk_vk, &proof, &public_inputs)
+        let public_inputs = Fr::from_slice(public_inputs_hash).unwrap();
+        let sp1_vkey_hash = Fr::from_slice(sp1_vkey_hash).unwrap();
+        verify_plonk_algebraic(&plonk_vk, &proof, &[sp1_vkey_hash, public_inputs])
     }
 }

@@ -10,21 +10,26 @@ keywords = { workspace = true }
 categories = { workspace = true }
 
 [dependencies]
-p3-matrix = { workspace = true }
+# sp1
 sp1-recursion-compiler = { workspace = true }
 sp1-recursion-core = { workspace = true }
 sp1-recursion-circuit = { workspace = true }
 sp1-recursion-gnark-ffi = { workspace = true }
 sp1-core-machine = { workspace = true }
 sp1-stark = { workspace = true }
-p3-symmetric = { workspace = true }
 sp1-core-executor = { workspace = true }
 sp1-primitives = { workspace = true }
+sp1-verifier = { workspace = true }
+
+# p3
+p3-symmetric = { workspace = true }
+p3-matrix = { workspace = true }
 p3-field = { workspace = true }
 p3-challenger = { workspace = true }
 p3-baby-bear = { workspace = true }
 p3-bn254-fr = { workspace = true }
 p3-commit = { workspace = true }
+
 bincode = "1.3.3"
 serde = { version = "1.0", features = ["derive", "rc"] }
 rayon = "1.10.0"
@@ -37,13 +42,15 @@ anyhow = "1.0.83"
 dirs = "5.0.1"
 tempfile = "3.10.1"
 subtle-encoding = "0.5.1"
-serial_test = "3.1.1"
 num-bigint = "0.4.6"
 thiserror = "1.0.63"
 lru = "0.12.4"
 eyre = "0.6.12"
 reqwest = { version = "0.11", features = ["blocking"] }
 lazy_static = "1.5.0"
+
+[dev-dependencies]
+serial_test = { version = "3.1.1"}
 
 [[bin]]
 name = "build_plonk_bn254"

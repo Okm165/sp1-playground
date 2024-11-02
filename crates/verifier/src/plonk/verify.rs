@@ -30,7 +30,7 @@ pub(crate) struct PlonkVerifyingKey {
     pub(crate) commitment_constraint_indexes: Vec<usize>,
 }
 
-/// Verifies a PLONK proof
+/// Verifies a PLONK proof using algebraic inputs.
 ///
 /// # Arguments
 ///
@@ -41,11 +41,11 @@ pub(crate) struct PlonkVerifyingKey {
 /// # Returns
 ///
 /// * `Result<bool, PlonkError>` - Returns true if the proof is valid, or an error if verification fails
-pub(crate) fn verify_plonk_raw(
+pub(crate) fn verify_plonk_algebraic(
     vk: &PlonkVerifyingKey,
     proof: &PlonkProof,
     public_inputs: &[Fr],
-) -> Result<bool, PlonkError> {
+) -> Result<(), PlonkError> {
     // Check if the number of BSB22 commitments matches the number of Qcp in the verifying key
     if proof.bsb22_commitments.len() != vk.qcp.len() {
         return Err(PlonkError::GeneralError(Error::Bsb22CommitmentMismatch));
@@ -313,7 +313,7 @@ pub(crate) fn verify_plonk_raw(
         &vk.kzg,
     )?;
 
-    Ok(true)
+    Ok(())
 }
 
 /// Binds all plonk public data to the transcript.

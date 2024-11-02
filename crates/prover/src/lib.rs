@@ -80,6 +80,7 @@ use sp1_stark::{
     MachineProver, SP1CoreOpts, SP1ProverOpts, ShardProof, StarkGenericConfig, StarkVerifyingKey,
     Val, Word, DIGEST_SIZE,
 };
+use sp1_verifier::{Groth16Verifier, PlonkVerifier};
 
 pub use types::*;
 use utils::{sp1_committed_values_digest_bn254, sp1_vkey_digest_bn254, words_to_bytes};
@@ -1102,12 +1103,29 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         let proof = prover.prove(witness, build_dir.to_path_buf());
 
         // Verify the proof.
-        prover.verify(
-            &proof,
-            &vkey_hash.as_canonical_biguint(),
-            &committed_values_digest.as_canonical_biguint(),
-            build_dir,
-        );
+        // prover.verify_ffi(
+        //     &proof,
+        //     &vkey_hash.as_canonical_biguint(),
+        //     &committed_values_digest.as_canonical_biguint(),
+        //     build_dir,
+        // );
+
+        let plonk_vk = std::fs::read(build_dir.join("plonk_vk.bin")).unwrap();
+
+        let vkey_hash_bytes: [u8; 32] = [vec![0u8], vkey_hash.as_canonical_biguint().to_bytes_be()]
+            .concat()
+            .try_into()
+            .unwrap();
+        let committed_values_digest_bytes: [u8; 32] =
+            committed_values_digest.as_canonical_biguint().to_bytes_be().try_into().unwrap();
+
+        PlonkVerifier::verify_bytes(
+            &proof.raw_bytes().expect("Invalid raw proof"),
+            &vkey_hash_bytes,
+            &committed_values_digest_bytes,
+            &plonk_vk,
+        )
+        .expect("Invalid plonk proof");
 
         proof
     }
@@ -1134,13 +1152,30 @@ impl<C: SP1ProverComponents> SP1Prover<C> {
         let prover = Groth16Bn254Prover::new();
         let proof = prover.prove(witness, build_dir.to_path_buf());
 
-        // Verify the proof.
-        prover.verify(
-            &proof,
-            &vkey_hash.as_canonical_biguint(),
-            &committed_values_digest.as_canonical_biguint(),
-            build_dir,
-        );
+        // // Verify the proof.
+        // prover.verify_ffi(
+        //     &proof,
+        //     &vkey_hash.as_canonical_biguint(),
+        //     &committed_values_digest.as_canonical_biguint(),
+        //     build_dir,
+        // );
+
+        let groth16_vk = std::fs::read(build_dir.join("groth16_vk.bin")).unwrap();
+
+        let vkey_hash_bytes: [u8; 32] = [vec![0u8], vkey_hash.as_canonical_biguint().to_bytes_be()]
+            .concat()
+            .try_into()
+            .unwrap();
+        let committed_values_digest_bytes: [u8; 32] =
+            committed_values_digest.as_canonical_biguint().to_bytes_be().try_into().unwrap();
+
+        Groth16Verifier::verify_bytes(
+            &proof.raw_bytes().expect("Invalid raw proof"),
+            &vkey_hash_bytes,
+            &committed_values_digest_bytes,
+            &groth16_vk,
+        )
+        .expect("Invalid groth16 proof");
 
         proof
     }
@@ -1386,9 +1421,13 @@ pub mod tests {
         );
         let plonk_bn254_proof =
             prover.wrap_plonk_bn254(wrapped_bn254_proof.clone(), &artifacts_dir);
-        println!("{:?}", plonk_bn254_proof);
 
-        prover.verify_plonk_bn254(&plonk_bn254_proof, &vk, &public_values, &artifacts_dir)?;
+        println!("artifacts_dir: {:?}", artifacts_dir);
+
+        let plonk_vk = std::fs::read(artifacts_dir.join("plonk_vk.bin")).unwrap();
+        println!("plonk_vk: {:?}", plonk_vk.len());
+
+        prover.verify_plonk_bn254(&plonk_bn254_proof, &vk, &public_values, &plonk_vk)?;
 
         tracing::info!("generate groth16 bn254 proof");
         let artifacts_dir = try_build_groth16_bn254_artifacts_dev(
@@ -1396,15 +1435,11 @@ pub mod tests {
             &wrapped_bn254_proof.proof,
         );
         let groth16_bn254_proof = prover.wrap_groth16_bn254(wrapped_bn254_proof, &artifacts_dir);
-        println!("{:?}", groth16_bn254_proof);
+
+        let groth16_vk = std::fs::read(artifacts_dir.join("groth16_vk.bin")).unwrap();
 
         if verify {
-            prover.verify_groth16_bn254(
-                &groth16_bn254_proof,
-                &vk,
-                &public_values,
-                &artifacts_dir,
-            )?;
+            prover.verify_groth16_bn254(&groth16_bn254_proof, &vk, &public_values, &groth16_vk)?;
         }
 
         Ok(())

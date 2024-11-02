@@ -10,12 +10,18 @@ keywords = { workspace = true }
 categories = { workspace = true }
 
 [dependencies]
-p3-field = { workspace = true }
-p3-symmetric = { workspace = true }
-p3-baby-bear = { workspace = true }
+# sp1
 sp1-recursion-compiler = { workspace = true }
 sp1-core-machine = { workspace = true }
 sp1-stark = { workspace = true }
+sp1-verifier = { workspace = true }
+
+# p3
+p3-field = { workspace = true }
+p3-symmetric = { workspace = true }
+p3-baby-bear = { workspace = true }
+
+# misc
 serde = "1.0.204"
 serde_json = "1.0.121"
 tempfile = "3.10.1"
