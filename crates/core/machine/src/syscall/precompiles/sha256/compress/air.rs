@@ -17,8 +17,8 @@ use crate::{
     air::{MemoryAirBuilder, WordAirBuilder},
     memory::MemoryCols,
     operations::{
-        Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation, NotOperation,
-        XorOperation,
+        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
+        NotOperation, XorOperation,
     },
 };
 use sp1_stark::air::BaseAirBuilder;
@@ -355,8 +355,8 @@ impl ShaCompressChip {
         Add5Operation::<AB::F>::eval(
             builder,
             &[local.h, local.s1.value, local.ch.value, local.k, local.mem.access.value],
-            local.is_compression,
             local.temp1,
+            local.is_compression,
         );
 
         // Calculate S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22).
@@ -425,15 +425,6 @@ impl ShaCompressChip {
             local.is_compression,
         );
 
-        // Calculate temp2 := s0 + maj.
-        AddOperation::<AB::F>::eval(
-            builder,
-            local.s0.value,
-            local.maj.value,
-            local.temp2,
-            local.is_compression.into(),
-        );
-
         // Calculate d + temp1 for the new value of e.
         AddOperation::<AB::F>::eval(
             builder,
@@ -443,13 +434,14 @@ impl ShaCompressChip {
             local.is_compression.into(),
         );
 
-        // Calculate temp1 + temp2 for the new value of a.
-        AddOperation::<AB::F>::eval(
+        // Calculate temp1 + s0 + maj for the new value of a.
+        Add3Operation::<AB::F>::eval(
             builder,
             local.temp1.value,
-            local.temp2.value,
-            local.temp1_add_temp2,
-            local.is_compression.into(),
+            local.s0.value,
+            local.maj.value,
+            local.temp1_add_s0_add_maj,
+            local.is_compression,
         );
 
         // h := g
@@ -459,7 +451,7 @@ impl ShaCompressChip {
         // d := c
         // c := b
         // b := a
-        // a := temp1 + temp2
+        // a := temp1 + s0 + maj
         builder.when_transition().when(local.is_compression).assert_word_eq(next.h, local.g);
         builder.when_transition().when(local.is_compression).assert_word_eq(next.g, local.f);
         builder.when_transition().when(local.is_compression).assert_word_eq(next.f, local.e);
@@ -473,7 +465,7 @@ impl ShaCompressChip {
         builder
             .when_transition()
             .when(local.is_compression)
-            .assert_word_eq(next.a, local.temp1_add_temp2.value);
+            .assert_word_eq(next.a, local.temp1_add_s0_add_maj.value);
     }
 
     fn eval_finalize_ops<AB: SP1AirBuilder>(

@@ -6,8 +6,8 @@ use sp1_stark::Word;
 use crate::{
     memory::MemoryReadWriteCols,
     operations::{
-        Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation, NotOperation,
-        XorOperation,
+        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
+        NotOperation, XorOperation,
     },
 };
 
@@ -90,13 +90,10 @@ pub struct ShaCompressCols<T> {
     /// `maj := (a and b) xor (a and c) xor (b and c)`.
     pub maj: XorOperation<T>,
 
-    /// `temp2 := S0 + maj`.
-    pub temp2: AddOperation<T>,
-
     /// The next value of `e` is `d + temp1`.
     pub d_add_temp1: AddOperation<T>,
-    /// The next value of `a` is `temp1 + temp2`.
-    pub temp1_add_temp2: AddOperation<T>,
+    /// The next value of `a` is `temp1 + S0 + maj`.
+    pub temp1_add_s0_add_maj: Add3Operation<T>,
 
     /// During finalize, this is one of a-h and is being written into `mem`.
     pub finalized_operand: Word<T>,

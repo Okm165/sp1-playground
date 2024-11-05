@@ -85,8 +85,8 @@ impl<F: Field> Add4Operation<F> {
         b: Word<AB::Var>,
         c: Word<AB::Var>,
         d: Word<AB::Var>,
-        is_real: AB::Var,
         cols: Add4Operation<AB::Var>,
+        is_real: AB::Var,
     ) {
         // Range check each byte.
         {
