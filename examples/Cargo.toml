@@ -33,6 +33,8 @@ members = [
   "ssz-withdrawals/script",
   "tendermint/program",
   "tendermint/script",
+  "sha256/program",
+  "sha256/script",
 ]
 resolver = "2"
 

@@ -46,7 +46,7 @@ impl<F: Field> Add3Operation<F> {
         let c = c_u32.to_le_bytes();
 
         let base = 256;
-        let mut carry = [0u8, 0u8, 0u8];
+        let mut carry = [0u8, 0u8, 0u8, 0u8];
         for i in 0..WORD_SIZE {
             let mut res = (a[i] as u32) + (b[i] as u32) + (c[i] as u32);
             if i > 0 {
