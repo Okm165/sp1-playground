@@ -19,7 +19,7 @@ pub enum SP1Proof {
     Core(Vec<ShardProof<CoreSC>>),
     Compressed(Box<SP1ReduceProof<InnerSC>>),
     Plonk(PlonkBn254Proof),
-    Groth16(Groth16Bn254Proof),
+    Groth16(Groth16Bn254Proof, Option<Box<SP1ReduceProof<InnerSC>>>),
 }
 
 /// A proof generated with SP1, bundled together with stdin, public values, and the SP1 version.
@@ -48,7 +48,7 @@ impl SP1ProofWithPublicValues {
     pub fn raw(&self) -> String {
         match &self.proof {
             SP1Proof::Plonk(plonk) => plonk.raw_proof.clone(),
-            SP1Proof::Groth16(groth16) => groth16.raw_proof.clone(),
+            SP1Proof::Groth16(groth16, None) => groth16.raw_proof.clone(),
             _ => unimplemented!(),
         }
     }
@@ -63,7 +63,7 @@ impl SP1ProofWithPublicValues {
                 let proof_bytes = hex::decode(&plonk.raw_proof).expect("Invalid Plonk proof");
                 [plonk.plonk_vkey_hash[..4].to_vec(), proof_bytes].concat()
             }
-            SP1Proof::Groth16(groth16) => {
+            SP1Proof::Groth16(groth16, _) => {
                 let proof_bytes = hex::decode(&groth16.raw_proof).expect("Invalid Groth16 proof");
                 [groth16.groth16_vkey_hash[..4].to_vec(), proof_bytes].concat()
             }
@@ -87,7 +87,8 @@ impl SP1ProofWithPublicValues {
                     hex::decode(&plonk_proof.encoded_proof).expect("Invalid Plonk proof");
                 [plonk_proof.plonk_vkey_hash[..4].to_vec(), proof_bytes].concat()
             }
-            SP1Proof::Groth16(groth16_proof) => {
+
+            SP1Proof::Groth16(groth16_proof, _) => {
                 let proof_bytes =
                     hex::decode(&groth16_proof.encoded_proof).expect("Invalid Groth16 proof");
                 [groth16_proof.groth16_vkey_hash[..4].to_vec(), proof_bytes].concat()
