@@ -24,7 +24,7 @@ impl<F: Field> Xor3Operation<F> {
         y: u32,
         z: u32,
     ) -> u32 {
-        let expected = x ^ y;
+        let expected = x ^ y ^ z;
         let x_bytes = x.to_le_bytes();
         let y_bytes = y.to_le_bytes();
         let z_bytes = z.to_le_bytes();
@@ -57,16 +57,14 @@ impl<F: Field> Xor3Operation<F> {
     #[allow(unused_variables)]
     pub fn eval<AB: SP1AirBuilder>(
         builder: &mut AB,
-        a: Word<AB::Var>,
-        b: Word<AB::Var>,
-        c: Word<AB::Var>,
-        cols: Xor3Operation<AB::Var>,
+        a: Word<AB::F>,
+        b: Word<AB::F>,
+        c: Word<AB::F>,
+        cols: Xor3Operation<AB::F>,
         is_real: AB::Var,
-    ) where
-        AB::Var: Field,
-    {
+    ) {
         for i in 0..WORD_SIZE {
-            let xor2 = Word::<AB::Var>::from(cols.value.to_u32() ^ c.to_u32());
+            let xor2 = Word::<AB::F>::from(cols.value.to_u32() ^ c.to_u32());
 
             builder.send_byte(
                 AB::F::from_canonical_u32(ByteOpcode::XOR as u32),
