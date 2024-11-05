@@ -6,7 +6,6 @@ use sp1_core_executor::{
 use sp1_derive::AlignedBorrow;
 use sp1_primitives::consts::WORD_SIZE;
 use sp1_stark::{air::SP1AirBuilder, Word};
-use std::ops::BitXor;
 
 /// A set of columns needed to compute the xor of two words.
 #[derive(AlignedBorrow, Default, Debug, Clone, Copy)]
@@ -64,14 +63,14 @@ impl<F: Field> Xor3Operation<F> {
         cols: Xor3Operation<AB::Var>,
         is_real: AB::Var,
     ) where
-        AB::Var: BitXor<Output = AB::Var> + Copy,
+        AB::Var: Field,
     {
         for i in 0..WORD_SIZE {
-            let xor2 = cols.value[i] ^ c[i];
+            let xor2 = Word::<AB::Var>::from(cols.value.to_u32() ^ c.to_u32());
 
             builder.send_byte(
                 AB::F::from_canonical_u32(ByteOpcode::XOR as u32),
-                xor2,
+                xor2[i],
                 a[i],
                 b[i],
                 is_real,
@@ -80,7 +79,7 @@ impl<F: Field> Xor3Operation<F> {
             builder.send_byte(
                 AB::F::from_canonical_u32(ByteOpcode::XOR as u32),
                 cols.value[i],
-                xor2,
+                xor2[i],
                 c[i],
                 is_real,
             );
