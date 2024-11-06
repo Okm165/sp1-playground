@@ -19,16 +19,16 @@ pub struct Byte3PreprocessedCols<T> {
     pub b: T,
 
     /// The third byte operand.
-    pub c: T,
+    pub c: [T; 256],
 
     /// The result of the `a xor b xor c`
-    pub xor3: T,
+    pub xor3: [T; 256],
 
     /// The result of the `ch := (e and f) xor ((not e) and g)`.
-    pub ch: T,
+    pub ch: [T; 256],
 
     /// The result of the `maj := (a and b) xor (a and c) xor (b and c)`.
-    pub maj: T,
+    pub maj: [T; 256],
 }
 
 /// For each byte operation in the preprocessed table, a corresponding Byte3MultCols row tracks the
@@ -37,5 +37,5 @@ pub struct Byte3PreprocessedCols<T> {
 #[repr(C)]
 pub struct Byte3MultCols<T> {
     /// The multiplicities of each byte operation.
-    pub multiplicities: [T; NUM_BYTE3_OPS],
+    pub multiplicities: [[T; 256]; NUM_BYTE3_OPS],
 }

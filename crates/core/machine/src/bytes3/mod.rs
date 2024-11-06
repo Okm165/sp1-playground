@@ -8,7 +8,7 @@ use core::borrow::BorrowMut;
 use itertools::Itertools;
 use p3_field::Field;
 use p3_matrix::dense::RowMajorMatrix;
-use sp1_core_executor::{events::Byte3LookupEvent, Byte3Opcode};
+use sp1_core_executor::Byte3Opcode;
 use std::marker::PhantomData;
 
 /// The number of different byte operations.
@@ -36,37 +36,34 @@ impl<F: Field> Byte3Chip<F> {
         let opcodes = Byte3Opcode::all();
 
         // Iterate over all options for pairs of bytes `a` and `b`.
-        for (row_index, ((a, b), c)) in
-            (0..=u8::MAX).cartesian_product(0..=u8::MAX).cartesian_product(0..=u8::MAX).enumerate()
-        {
+        for (row_index, (a, b)) in (0..=u8::MAX).cartesian_product(0..=u8::MAX).enumerate() {
             let a = a as u8;
             let b = b as u8;
-            let c = c as u8;
             let col: &mut Byte3PreprocessedCols<F> = initial_trace.row_mut(row_index).borrow_mut();
 
             // Set the values of `a`, `b` and `c`.
             col.a = F::from_canonical_u8(a);
             col.b = F::from_canonical_u8(b);
-            col.c = F::from_canonical_u8(c);
+            col.c = (0..=u8::MAX)
+                .map(F::from_canonical_u8)
+                .collect::<Vec<F>>()
+                .try_into()
+                .expect("Expected a Vec of length 256");
 
             // Iterate over all operations for results and updating the table map.
-            let shard = 0;
-            for opcode in opcodes.iter() {
+            for (opcode, c) in opcodes.iter().cartesian_product(0..=u8::MAX) {
                 match opcode {
                     Byte3Opcode::XOR3 => {
                         let xor3 = a ^ b ^ c;
-                        col.xor3 = F::from_canonical_u8(xor3);
-                        Byte3LookupEvent::new(shard, *opcode, a, b, c, xor3)
+                        col.xor3[c as usize] = F::from_canonical_u8(xor3);
                     }
                     Byte3Opcode::CH => {
                         let ch = (a & b) ^ (!a & c);
-                        col.ch = F::from_canonical_u8(ch);
-                        Byte3LookupEvent::new(shard, *opcode, a, b, c, ch)
+                        col.ch[c as usize] = F::from_canonical_u8(ch);
                     }
                     Byte3Opcode::MAJ => {
                         let maj = (a & b) ^ (a & c) ^ (b & c);
-                        col.maj = F::from_canonical_u8(maj);
-                        Byte3LookupEvent::new(shard, *opcode, a, b, c, maj)
+                        col.maj[c as usize] = F::from_canonical_u8(maj);
                     }
                 };
             }

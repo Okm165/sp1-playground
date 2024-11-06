@@ -10,7 +10,7 @@ use p3_matrix::dense::RowMajorMatrix;
 use sp1_core_executor::{ExecutionRecord, Program};
 use sp1_stark::air::MachineAir;
 
-pub const NUM_ROWS: usize = 1 << 24;
+pub const NUM_ROWS: usize = 1 << 16;
 
 impl<F: Field> MachineAir<F> for Byte3Chip<F> {
     type Record = ExecutionRecord;
@@ -44,12 +44,11 @@ impl<F: Field> MachineAir<F> for Byte3Chip<F> {
 
         for (_, blu) in input.byte3_lookups.iter() {
             for (lookup, mult) in blu.iter() {
-                let row = (((lookup.a as u32) << 16) + ((lookup.b as u32) << 8) + lookup.c as u32)
-                    as usize;
+                let row = (((lookup.a as u32) << 8) + lookup.b as u32) as usize;
                 let index = lookup.opcode as usize;
 
                 let cols: &mut Byte3MultCols<F> = trace.row_mut(row).borrow_mut();
-                cols.multiplicities[index] += F::from_canonical_usize(*mult);
+                cols.multiplicities[index][lookup.c as usize] += F::from_canonical_usize(*mult);
             }
         }
 
