@@ -17,7 +17,7 @@ use crate::{
     air::{MemoryAirBuilder, WordAirBuilder},
     memory::MemoryCols,
     operations::{
-        Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation, NotOperation,
+        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
         XorOperation,
     },
 };
@@ -329,24 +329,22 @@ impl ShaCompressChip {
             local.is_compression,
         );
 
-        // Calculate ch := (e and f) xor ((not e) and g).
-        // Calculate e and f.
-        AndOperation::<AB::F>::eval(builder, local.e, local.f, local.e_and_f, local.is_compression);
-        // Calculate not e.
-        NotOperation::<AB::F>::eval(builder, local.e, local.e_not, local.is_compression);
-        // Calculate (not e) and g.
+        // Calculate ch := (e and f) xor ((not e) and g) = g xor (e and (f xor g)).
+        // Calculate f xor g.
+        XorOperation::<AB::F>::eval(builder, local.f, local.g, local.f_xor_g, local.is_compression);
+        // Calculate e and (f xor g).
         AndOperation::<AB::F>::eval(
             builder,
-            local.e_not.value,
-            local.g,
-            local.e_not_and_g,
+            local.e,
+            local.f_xor_g.value,
+            local.e_and_f_xor_g,
             local.is_compression,
         );
-        // Calculate ch := (e and f) xor ((not e) and g).
+        // Calculate ch := g xor (e and (f xor g)).
         XorOperation::<AB::F>::eval(
             builder,
-            local.e_and_f.value,
-            local.e_not_and_g.value,
+            local.g,
+            local.e_and_f_xor_g.value,
             local.ch,
             local.is_compression,
         );
@@ -401,37 +399,26 @@ impl ShaCompressChip {
             local.is_compression,
         );
 
-        // Calculate maj := (a and b) xor (a and c) xor (b and c).
-        // Calculate a and b.
-        AndOperation::<AB::F>::eval(builder, local.a, local.b, local.a_and_b, local.is_compression);
-        // Calculate a and c.
-        AndOperation::<AB::F>::eval(builder, local.a, local.c, local.a_and_c, local.is_compression);
-        // Calculate b and c.
-        AndOperation::<AB::F>::eval(builder, local.b, local.c, local.b_and_c, local.is_compression);
-        // Calculate (a and b) xor (a and c).
-        XorOperation::<AB::F>::eval(
+        // Calculate maj := (a and b) xor (a and c) xor (b and c) = (a and (b xor c)) xor (b and c).
+        // Calculate b xor c.
+        XorOperation::<AB::F>::eval(builder, local.b, local.c, local.b_xor_c, local.is_compression);
+        // Calculate a and (b xor c).
+        AndOperation::<AB::F>::eval(
             builder,
-            local.a_and_b.value,
-            local.a_and_c.value,
-            local.maj_intermediate,
+            local.a,
+            local.b_xor_c.value,
+            local.a_and_b_xor_c,
             local.is_compression,
         );
-        // Calculate maj := ((a and b) xor (a and c)) xor (b and c).
+        // Calculate b and c.
+        AndOperation::<AB::F>::eval(builder, local.b, local.c, local.b_and_c, local.is_compression);
+        // Calculate maj := (a and (b xor c)) xor (b and c).
         XorOperation::<AB::F>::eval(
             builder,
-            local.maj_intermediate.value,
+            local.a_and_b_xor_c.value,
             local.b_and_c.value,
             local.maj,
             local.is_compression,
-        );
-
-        // Calculate temp2 := s0 + maj.
-        AddOperation::<AB::F>::eval(
-            builder,
-            local.s0.value,
-            local.maj.value,
-            local.temp2,
-            local.is_compression.into(),
         );
 
         // Calculate d + temp1 for the new value of e.
@@ -443,13 +430,14 @@ impl ShaCompressChip {
             local.is_compression.into(),
         );
 
-        // Calculate temp1 + temp2 for the new value of a.
-        AddOperation::<AB::F>::eval(
+        // Calculate temp1 + S0 + maj for the new value of a.
+        Add3Operation::<AB::F>::eval(
             builder,
             local.temp1.value,
-            local.temp2.value,
+            local.s0.value,
+            local.maj.value,
             local.temp1_add_temp2,
-            local.is_compression.into(),
+            local.is_compression,
         );
 
         // h := g
