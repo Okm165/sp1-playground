@@ -6,7 +6,10 @@ use p3_field::PrimeField32;
 use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use p3_maybe_rayon::prelude::{ParallelIterator, ParallelSlice};
 use sp1_core_executor::{
-    events::{ByteLookupEvent, ByteRecord, PrecompileEvent, ShaCompressEvent},
+    events::{
+        Byte3LookupEvent, Byte3Record, ByteLookupEvent, ByteRecord, PrecompileEvent,
+        ShaCompressEvent,
+    },
     syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
@@ -41,7 +44,7 @@ impl<F: PrimeField32> MachineAir<F> for ShaCompressChip {
             } else {
                 unreachable!()
             };
-            self.event_to_rows(event, &mut wrapped_rows, &mut Vec::new());
+            self.event_to_rows(event, &mut wrapped_rows, &mut Vec::new(), &mut Vec::new());
         }
         let mut rows = wrapped_rows.unwrap();
 
@@ -97,23 +100,28 @@ impl<F: PrimeField32> MachineAir<F> for ShaCompressChip {
         let events = input.get_precompile_events(SyscallCode::SHA_COMPRESS);
         let chunk_size = std::cmp::max(events.len() / num_cpus::get(), 1);
 
-        let blu_batches = events
+        let (blu_batches, b3lu_batches): (
+            Vec<HashMap<u32, HashMap<ByteLookupEvent, usize>>>,
+            Vec<HashMap<u32, HashMap<Byte3LookupEvent, usize>>>,
+        ) = events
             .par_chunks(chunk_size)
             .map(|events| {
                 let mut blu: HashMap<u32, HashMap<ByteLookupEvent, usize>> = HashMap::new();
+                let mut b3lu: HashMap<u32, HashMap<Byte3LookupEvent, usize>> = HashMap::new();
                 events.iter().for_each(|(_, event)| {
                     let event = if let PrecompileEvent::ShaCompress(event) = event {
                         event
                     } else {
                         unreachable!()
                     };
-                    self.event_to_rows::<F>(event, &mut None, &mut blu);
+                    self.event_to_rows::<F>(event, &mut None, &mut blu, &mut b3lu);
                 });
-                blu
+                (blu, b3lu)
             })
-            .collect::<Vec<_>>();
+            .unzip();
 
         output.add_sharded_byte_lookup_events(blu_batches.iter().collect_vec());
+        output.add_sharded_byte3_lookup_events(b3lu_batches.iter().collect_vec());
     }
 
     fn included(&self, shard: &Self::Record) -> bool {
@@ -131,6 +139,7 @@ impl ShaCompressChip {
         event: &ShaCompressEvent,
         rows: &mut Option<Vec<[F; NUM_SHA_COMPRESS_COLS]>>,
         blu: &mut impl ByteRecord,
+        blu3: &mut impl Byte3Record,
     ) {
         let shard = event.shard;
 
@@ -212,8 +221,7 @@ impl ShaCompressChip {
             let e_rr_6 = cols.e_rr_6.populate(blu, shard, e, 6);
             let e_rr_11 = cols.e_rr_11.populate(blu, shard, e, 11);
             let e_rr_25 = cols.e_rr_25.populate(blu, shard, e, 25);
-            let s1_intermediate = cols.s1_intermediate.populate(blu, shard, e_rr_6, e_rr_11);
-            let s1 = cols.s1.populate(blu, shard, s1_intermediate, e_rr_25);
+            let s1 = cols.s1.populate(blu3, shard, e_rr_6, e_rr_11, e_rr_25);
 
             let e_and_f = cols.e_and_f.populate(blu, shard, e, f);
             let e_not = cols.e_not.populate(blu, shard, e);

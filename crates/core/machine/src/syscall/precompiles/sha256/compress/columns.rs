@@ -7,7 +7,7 @@ use crate::{
     memory::MemoryReadWriteCols,
     operations::{
         Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
-        NotOperation, XorOperation,
+        NotOperation, Xor3Operation, XorOperation,
     },
 };
 
@@ -63,9 +63,8 @@ pub struct ShaCompressCols<T> {
     pub e_rr_6: FixedRotateRightOperation<T>,
     pub e_rr_11: FixedRotateRightOperation<T>,
     pub e_rr_25: FixedRotateRightOperation<T>,
-    pub s1_intermediate: XorOperation<T>,
     /// `S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)`.
-    pub s1: XorOperation<T>,
+    pub s1: Xor3Operation<T>,
 
     pub e_and_f: AndOperation<T>,
     pub e_not: NotOperation<T>,

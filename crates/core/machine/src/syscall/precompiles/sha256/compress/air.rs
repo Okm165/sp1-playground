@@ -18,7 +18,7 @@ use crate::{
     memory::MemoryCols,
     operations::{
         Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
-        NotOperation, XorOperation,
+        NotOperation, Xor3Operation, XorOperation,
     },
 };
 use sp1_stark::air::BaseAirBuilder;
@@ -312,18 +312,11 @@ impl ShaCompressChip {
             local.e_rr_25,
             local.is_compression,
         );
-        // Calculate (e rightrotate 6) xor (e rightrotate 11).
-        XorOperation::<AB::F>::eval(
+        // Calculate S1 := ((e rightrotate 6) xor (e rightrotate 11)) xor (e rightrotate 25).
+        Xor3Operation::<AB::F>::eval(
             builder,
             local.e_rr_6.value,
             local.e_rr_11.value,
-            local.s1_intermediate,
-            local.is_compression,
-        );
-        // Calculate S1 := ((e rightrotate 6) xor (e rightrotate 11)) xor (e rightrotate 25).
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.s1_intermediate.value,
             local.e_rr_25.value,
             local.s1,
             local.is_compression,

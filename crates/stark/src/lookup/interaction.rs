@@ -45,7 +45,7 @@ pub enum InteractionKind {
     /// Interaction with a syscall.
     Syscall = 8,
 
-    /// Interaction with the byte lookup table for byte3 operations.
+    /// Interaction with the byte3 lookup table for byte3 operations.
     Byte3 = 9,
 }
 

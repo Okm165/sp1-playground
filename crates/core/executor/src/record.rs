@@ -12,9 +12,10 @@ use serde::{Deserialize, Serialize};
 use super::{program::Program, Opcode};
 use crate::{
     events::{
-        add_sharded_byte_lookup_events, AluEvent, Byte3LookupEvent, ByteLookupEvent, ByteRecord,
-        CpuEvent, LookupId, MemoryInitializeFinalizeEvent, MemoryLocalEvent, MemoryRecordEnum,
-        PrecompileEvent, PrecompileEvents, SyscallEvent,
+        add_sharded_byte3_lookup_events, add_sharded_byte_lookup_events, AluEvent,
+        Byte3LookupEvent, Byte3Record, ByteLookupEvent, ByteRecord, CpuEvent, LookupId,
+        MemoryInitializeFinalizeEvent, MemoryLocalEvent, MemoryRecordEnum, PrecompileEvent,
+        PrecompileEvents, SyscallEvent,
     },
     syscalls::SyscallCode,
     CoreShape,
@@ -354,6 +355,10 @@ impl MachineRecord for ExecutionRecord {
                 "byte_lookups".to_string(),
                 self.byte_lookups.get(&shard).map_or(0, hashbrown::HashMap::len),
             );
+            stats.insert(
+                "byte3_lookups".to_string(),
+                self.byte3_lookups.get(&shard).map_or(0, hashbrown::HashMap::len),
+            );
         }
         // Filter out the empty events.
         stats.retain(|_, v| *v != 0);
@@ -378,6 +383,12 @@ impl MachineRecord for ExecutionRecord {
             self.byte_lookups = std::mem::take(&mut other.byte_lookups);
         } else {
             self.add_sharded_byte_lookup_events(vec![&other.byte_lookups]);
+        }
+
+        if self.byte3_lookups.is_empty() {
+            self.byte3_lookups = std::mem::take(&mut other.byte3_lookups);
+        } else {
+            self.add_sharded_byte3_lookup_events(vec![&other.byte3_lookups]);
         }
 
         self.global_memory_initialize_events.append(&mut other.global_memory_initialize_events);
@@ -436,5 +447,20 @@ impl ByteRecord for ExecutionRecord {
         new_events: Vec<&HashMap<u32, HashMap<ByteLookupEvent, usize>>>,
     ) {
         add_sharded_byte_lookup_events(&mut self.byte_lookups, new_events);
+    }
+}
+
+impl Byte3Record for ExecutionRecord {
+    fn add_byte3_lookup_event(&mut self, b3lu_event: Byte3LookupEvent) {
+        *self.byte3_lookups.entry(b3lu_event.shard).or_default().entry(b3lu_event).or_insert(0) +=
+            1;
+    }
+
+    #[inline]
+    fn add_sharded_byte3_lookup_events(
+        &mut self,
+        new_events: Vec<&HashMap<u32, HashMap<Byte3LookupEvent, usize>>>,
+    ) {
+        add_sharded_byte3_lookup_events(&mut self.byte3_lookups, new_events);
     }
 }

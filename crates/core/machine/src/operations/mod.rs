@@ -21,6 +21,7 @@ mod lt;
 mod not;
 mod or;
 mod xor;
+mod xor3;
 
 pub use add::*;
 pub use add3::*;
@@ -38,3 +39,4 @@ pub use lt::*;
 pub use not::*;
 pub use or::*;
 pub use xor::*;
+pub use xor3::*;
