@@ -175,6 +175,51 @@ pub trait ByteAirBuilder: BaseAirBuilder {
     }
 }
 
+/// A trait which contains methods for byte3 interactions in an AIR.
+pub trait Byte3AirBuilder: BaseAirBuilder {
+    /// Sends a triple to byte3 chip.
+    #[allow(clippy::too_many_arguments)]
+    fn send_byte_triple(
+        &mut self,
+        opcode: impl Into<Self::Expr>,
+        a: impl Into<Self::Expr>,
+        b: impl Into<Self::Expr>,
+        c: impl Into<Self::Expr>,
+        result: impl Into<Self::Expr>,
+        multiplicity: impl Into<Self::Expr>,
+    ) {
+        self.send(
+            AirInteraction::new(
+                vec![opcode.into(), a.into(), b.into(), c.into(), result.into()],
+                multiplicity.into(),
+                InteractionKind::Byte3,
+            ),
+            InteractionScope::Local,
+        );
+    }
+
+    /// Receives a byte3 operation.
+    #[allow(clippy::too_many_arguments)]
+    fn receive_byte_triple(
+        &mut self,
+        opcode: impl Into<Self::Expr>,
+        a: impl Into<Self::Expr>,
+        b: impl Into<Self::Expr>,
+        c: impl Into<Self::Expr>,
+        result: impl Into<Self::Expr>,
+        multiplicity: impl Into<Self::Expr>,
+    ) {
+        self.send(
+            AirInteraction::new(
+                vec![opcode.into(), a.into(), b.into(), c.into(), result.into()],
+                multiplicity.into(),
+                InteractionKind::Byte3,
+            ),
+            InteractionScope::Local,
+        );
+    }
+}
+
 /// A trait which contains methods related to ALU interactions in an AIR.
 pub trait AluAirBuilder: BaseAirBuilder {
     /// Sends an ALU operation to be processed.
@@ -345,7 +390,10 @@ pub trait MachineAirBuilder:
 }
 
 /// A trait which contains all helper methods for building SP1 machine AIRs.
-pub trait SP1AirBuilder: MachineAirBuilder + ByteAirBuilder + AluAirBuilder {}
+pub trait SP1AirBuilder:
+    MachineAirBuilder + ByteAirBuilder + Byte3AirBuilder + AluAirBuilder
+{
+}
 
 impl<'a, AB: AirBuilder + MessageBuilder<M>, M> MessageBuilder<M> for FilteredAirBuilder<'a, AB> {
     fn send(&mut self, message: M, scope: InteractionScope) {
@@ -359,6 +407,7 @@ impl<'a, AB: AirBuilder + MessageBuilder<M>, M> MessageBuilder<M> for FilteredAi
 
 impl<AB: AirBuilder + MessageBuilder<AirInteraction<AB::Expr>>> BaseAirBuilder for AB {}
 impl<AB: BaseAirBuilder> ByteAirBuilder for AB {}
+impl<AB: BaseAirBuilder> Byte3AirBuilder for AB {}
 impl<AB: BaseAirBuilder> AluAirBuilder for AB {}
 
 impl<AB: BaseAirBuilder> ExtensionAirBuilder for AB {}

@@ -2,6 +2,7 @@
 
 mod alu;
 mod byte;
+mod byte3;
 mod cpu;
 mod memory;
 mod precompiles;
@@ -10,6 +11,7 @@ mod utils;
 
 pub use alu::*;
 pub use byte::*;
+pub use byte3::*;
 pub use cpu::*;
 pub use memory::*;
 pub use precompiles::*;

@@ -34,6 +34,7 @@ pub(crate) mod riscv_chips {
     pub use crate::{
         alu::{AddSubChip, BitwiseChip, DivRemChip, LtChip, MulChip, ShiftLeft, ShiftRightChip},
         bytes::ByteChip,
+        bytes3::Byte3Chip,
         cpu::CpuChip,
         memory::MemoryGlobalChip,
         program::ProgramChip,
@@ -88,6 +89,8 @@ pub enum RiscvAir<F: PrimeField32> {
     ShiftRight(ShiftRightChip),
     /// A lookup table for byte operations.
     ByteLookup(ByteChip<F>),
+    /// A lookup table for byte operations.
+    Byte3Lookup(Byte3Chip<F>),
     /// A table for initializing the global memory state.
     MemoryGlobalInit(MemoryGlobalChip),
     /// A table for finalizing the global memory state.
@@ -344,6 +347,10 @@ impl<F: PrimeField32> RiscvAir<F> {
         costs.insert(RiscvAirDiscriminants::ByteLookup, byte.cost());
         chips.push(byte);
 
+        let byte3 = Chip::new(RiscvAir::Byte3Lookup(Byte3Chip::default()));
+        costs.insert(RiscvAirDiscriminants::Byte3Lookup, byte3.cost());
+        chips.push(byte3);
+
         (chips, costs)
     }
 
@@ -353,6 +360,7 @@ impl<F: PrimeField32> RiscvAir<F> {
             (RiscvAir::Program(ProgramChip::default()), program.instructions.len()),
             (RiscvAir::ProgramMemory(MemoryProgramChip::default()), program.memory_image.len()),
             (RiscvAir::ByteLookup(ByteChip::default()), 1 << 16),
+            (RiscvAir::Byte3Lookup(Byte3Chip::default()), 1 << 24),
         ]
     }
 
@@ -431,6 +439,7 @@ impl<F: PrimeField32> RiscvAir<F> {
         airs.remove(&Self::Program(ProgramChip::default()));
         airs.remove(&Self::ProgramMemory(MemoryProgramChip::default()));
         airs.remove(&Self::ByteLookup(ByteChip::default()));
+        airs.remove(&Self::Byte3Lookup(Byte3Chip::default()));
 
         airs.into_iter()
             .map(|air| {
@@ -495,6 +504,7 @@ impl<F: PrimeField32> RiscvAir<F> {
             Self::ShiftRight(_) => unreachable!("Invalid for core chip"),
             Self::ShiftLeft(_) => unreachable!("Invalid for core chip"),
             Self::ByteLookup(_) => unreachable!("Invalid for core chip"),
+            Self::Byte3Lookup(_) => unreachable!("Invalid for core chip"),
             Self::SyscallCore(_) => unreachable!("Invalid for core chip"),
             Self::SyscallPrecompile(_) => unreachable!("Invalid for syscall precompile chip"),
         }

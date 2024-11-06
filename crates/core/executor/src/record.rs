@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 use super::{program::Program, Opcode};
 use crate::{
     events::{
-        add_sharded_byte_lookup_events, AluEvent, ByteLookupEvent, ByteRecord, CpuEvent, LookupId,
-        MemoryInitializeFinalizeEvent, MemoryLocalEvent, MemoryRecordEnum, PrecompileEvent,
-        PrecompileEvents, SyscallEvent,
+        add_sharded_byte_lookup_events, AluEvent, Byte3LookupEvent, ByteLookupEvent, ByteRecord,
+        CpuEvent, LookupId, MemoryInitializeFinalizeEvent, MemoryLocalEvent, MemoryRecordEnum,
+        PrecompileEvent, PrecompileEvents, SyscallEvent,
     },
     syscalls::SyscallCode,
     CoreShape,
@@ -47,6 +47,8 @@ pub struct ExecutionRecord {
     pub lt_events: Vec<AluEvent>,
     /// A trace of the byte lookups that are needed.
     pub byte_lookups: HashMap<u32, HashMap<ByteLookupEvent, usize>>,
+    /// A trace of the byte3 lookups that are needed.
+    pub byte3_lookups: HashMap<u32, HashMap<Byte3LookupEvent, usize>>,
     /// A trace of the precompile events.
     pub precompile_events: PrecompileEvents,
     /// A trace of the global memory initialize events.
@@ -81,6 +83,7 @@ impl Default for ExecutionRecord {
             divrem_events: Vec::default(),
             lt_events: Vec::default(),
             byte_lookups: HashMap::default(),
+            byte3_lookups: HashMap::default(),
             precompile_events: PrecompileEvents::default(),
             global_memory_initialize_events: Vec::default(),
             global_memory_finalize_events: Vec::default(),

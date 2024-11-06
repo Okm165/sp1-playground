@@ -44,6 +44,9 @@ pub enum InteractionKind {
 
     /// Interaction with a syscall.
     Syscall = 8,
+
+    /// Interaction with the byte lookup table for byte3 operations.
+    Byte3 = 9,
 }
 
 impl InteractionKind {
@@ -59,6 +62,7 @@ impl InteractionKind {
             InteractionKind::Range,
             InteractionKind::Field,
             InteractionKind::Syscall,
+            InteractionKind::Byte3,
         ]
     }
 }
@@ -100,6 +104,7 @@ impl Display for InteractionKind {
             InteractionKind::Range => write!(f, "Range"),
             InteractionKind::Field => write!(f, "Field"),
             InteractionKind::Syscall => write!(f, "Syscall"),
+            InteractionKind::Byte3 => write!(f, "Byte3"),
         }
     }
 }

@@ -14,8 +14,8 @@ use crate::{
 };
 
 use super::{
-    AddSubChip, BitwiseChip, ByteChip, CpuChip, DivRemChip, LtChip, MemoryGlobalChip, MulChip,
-    ProgramChip, RiscvAir, ShiftLeft, ShiftRightChip, SyscallChip,
+    AddSubChip, BitwiseChip, Byte3Chip, ByteChip, CpuChip, DivRemChip, LtChip, MemoryGlobalChip,
+    MulChip, ProgramChip, RiscvAir, ShiftLeft, ShiftRightChip, SyscallChip,
 };
 
 #[derive(Debug, Error)]
@@ -332,6 +332,7 @@ impl<F: PrimeField32> Default for CoreShapeConfig<F> {
             (RiscvAir::Program(ProgramChip::default()), program_heights),
             (RiscvAir::ProgramMemory(MemoryProgramChip::default()), program_memory_heights),
             (RiscvAir::ByteLookup(ByteChip::default()), vec![Some(16)]),
+            (RiscvAir::Byte3Lookup(Byte3Chip::default()), vec![Some(24)]),
         ]);
 
         let core_shapes = [
@@ -781,6 +782,7 @@ pub mod tests {
             (RiscvAir::<BabyBear>::Program(ProgramChip::default()), 10),
             (RiscvAir::<BabyBear>::ProgramMemory(MemoryProgramChip::default()), 10),
             (RiscvAir::<BabyBear>::ByteLookup(ByteChip::default()), 16),
+            (RiscvAir::<BabyBear>::Byte3Lookup(Byte3Chip::default()), 24),
         ];
 
         let core_log_heights = [

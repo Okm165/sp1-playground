@@ -1,7 +1,5 @@
 pub mod air;
 pub mod columns;
-// pub mod event;
-// pub mod opcode;
 pub mod trace;
 pub mod utils;
 

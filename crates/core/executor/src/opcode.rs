@@ -131,6 +131,21 @@ pub enum ByteOpcode {
     U16Range = 8,
 }
 
+/// Byte3 Opcode.
+///
+/// This represents a basic operation that can be performed on a byte3. Usually, these operations
+/// are performed via lookup tables on that iterate over the domain of three 8-bit values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
+pub enum Byte3Opcode {
+    /// XOR3.
+    XOR3 = 0,
+    /// CH.
+    CH = 1,
+    /// MAJ.
+    MAJ = 2,
+}
+
 impl Opcode {
     /// Get the mnemonic for the opcode.
     #[must_use]
