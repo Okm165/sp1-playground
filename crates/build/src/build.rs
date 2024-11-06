@@ -48,10 +48,13 @@ pub fn execute_build_program(
 
     let target_elf_paths = generate_elf_paths(&program_metadata, Some(args))?;
 
-    // Temporary backward compatibility with the deprecated behavior of copying the ELF file.
-    // TODO: add option to turn off this behavior
-    if target_elf_paths.len() == 1 {
-        copy_elf_to_output_dir(args, &program_metadata, &target_elf_paths[0].1)?;
+    if args.binaries.is_empty() && !target_elf_paths.is_empty() {
+        // Backward compatibility: if the --bin arg is not set, default to riscv32im-succinct-zkvm-elf
+        copy_elf_to_output_dir(args, &program_metadata, BUILD_TARGET, &target_elf_paths[0].1)?;
+    } else {
+        for (bin_target_name, elf_path) in &target_elf_paths {
+            copy_elf_to_output_dir(args, &program_metadata, bin_target_name, elf_path)?;
+        }
     }
 
     Ok(target_elf_paths)
@@ -121,11 +124,17 @@ fn generate_elf_paths(
 ) -> Result<Vec<(String, Utf8PathBuf)>> {
     let mut target_elf_paths = vec![];
 
-    for program_crate in metadata.workspace_default_members.iter() {
+    let packages_to_iterate = args
+        // Iterate over the specified --packages if any
+        .and_then(|args| if args.packages.is_empty() { None } else { Some(args.packages.clone()) })
+        // Otherwise fallback to workspace default members
+        .unwrap_or(metadata.workspace_default_members.iter().map(|p| p.to_string()).collect());
+
+    for program_crate in packages_to_iterate {
         let program = metadata
             .packages
             .iter()
-            .find(|p| &p.id == program_crate)
+            .find(|p| p.id.to_string() == program_crate)
             .ok_or_else(|| anyhow::anyhow!("cannot find package for {}", program_crate))?;
 
         for bin_target in program.targets.iter().filter(|t| {
@@ -133,7 +142,7 @@ fn generate_elf_paths(
         }) {
             // Filter out irrelevant targets if `--bin` is used.
             if let Some(args) = args {
-                if !args.binary.is_empty() && bin_target.name != args.binary {
+                if !args.binaries.is_empty() && !args.binaries.contains(&bin_target.name) {
                     continue;
                 }
             }
