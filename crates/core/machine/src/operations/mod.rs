@@ -20,6 +20,7 @@ mod is_zero_word;
 mod lt;
 mod not;
 mod or;
+mod sha;
 mod xor;
 mod xor3;
 
@@ -38,5 +39,6 @@ pub use is_zero_word::*;
 pub use lt::*;
 pub use not::*;
 pub use or::*;
+pub use sha::*;
 pub use xor::*;
 pub use xor3::*;

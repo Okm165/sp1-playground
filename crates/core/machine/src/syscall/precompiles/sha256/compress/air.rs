@@ -17,8 +17,8 @@ use crate::{
     air::{MemoryAirBuilder, WordAirBuilder},
     memory::MemoryCols,
     operations::{
-        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
-        NotOperation, Xor3Operation, XorOperation,
+        ch::CHOperation, maj::MAJOperation, Add3Operation, Add5Operation, AddOperation,
+        FixedRotateRightOperation, Xor3Operation,
     },
 };
 use sp1_stark::air::BaseAirBuilder;
@@ -323,23 +323,11 @@ impl ShaCompressChip {
         );
 
         // Calculate ch := (e and f) xor ((not e) and g).
-        // Calculate e and f.
-        AndOperation::<AB::F>::eval(builder, local.e, local.f, local.e_and_f, local.is_compression);
-        // Calculate not e.
-        NotOperation::<AB::F>::eval(builder, local.e, local.e_not, local.is_compression);
-        // Calculate (not e) and g.
-        AndOperation::<AB::F>::eval(
+        CHOperation::<AB::F>::eval(
             builder,
-            local.e_not.value,
+            local.e,
+            local.f,
             local.g,
-            local.e_not_and_g,
-            local.is_compression,
-        );
-        // Calculate ch := (e and f) xor ((not e) and g).
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.e_and_f.value,
-            local.e_not_and_g.value,
             local.ch,
             local.is_compression,
         );
@@ -377,43 +365,22 @@ impl ShaCompressChip {
             local.a_rr_22,
             local.is_compression,
         );
-        // Calculate (a rightrotate 2) xor (a rightrotate 13).
-        XorOperation::<AB::F>::eval(
+        // Calculate S0 := ((a rightrotate 2) xor (a rightrotate 13)) xor (a rightrotate 22).
+        Xor3Operation::<AB::F>::eval(
             builder,
             local.a_rr_2.value,
             local.a_rr_13.value,
-            local.s0_intermediate,
-            local.is_compression,
-        );
-        // Calculate S0 := ((a rightrotate 2) xor (a rightrotate 13)) xor (a rightrotate 22).
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.s0_intermediate.value,
             local.a_rr_22.value,
             local.s0,
             local.is_compression,
         );
 
         // Calculate maj := (a and b) xor (a and c) xor (b and c).
-        // Calculate a and b.
-        AndOperation::<AB::F>::eval(builder, local.a, local.b, local.a_and_b, local.is_compression);
-        // Calculate a and c.
-        AndOperation::<AB::F>::eval(builder, local.a, local.c, local.a_and_c, local.is_compression);
-        // Calculate b and c.
-        AndOperation::<AB::F>::eval(builder, local.b, local.c, local.b_and_c, local.is_compression);
-        // Calculate (a and b) xor (a and c).
-        XorOperation::<AB::F>::eval(
+        MAJOperation::<AB::F>::eval(
             builder,
-            local.a_and_b.value,
-            local.a_and_c.value,
-            local.maj_intermediate,
-            local.is_compression,
-        );
-        // Calculate maj := ((a and b) xor (a and c)) xor (b and c).
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.maj_intermediate.value,
-            local.b_and_c.value,
+            local.a,
+            local.b,
+            local.c,
             local.maj,
             local.is_compression,
         );

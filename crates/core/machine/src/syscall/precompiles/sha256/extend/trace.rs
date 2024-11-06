@@ -4,7 +4,9 @@ use p3_field::PrimeField32;
 use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use p3_maybe_rayon::prelude::{ParallelIterator, ParallelSlice};
 use sp1_core_executor::{
-    events::{ByteLookupEvent, ByteRecord, PrecompileEvent, ShaExtendEvent},
+    events::{
+        Byte3LookupEvent, Byte3Record, ByteLookupEvent, ByteRecord, PrecompileEvent, ShaExtendEvent,
+    },
     syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
@@ -30,11 +32,17 @@ impl<F: PrimeField32> MachineAir<F> for ShaExtendChip {
         let rows = Vec::new();
 
         let mut new_byte_lookup_events = Vec::new();
+        let mut new_byte3_lookup_events = Vec::new();
         let mut wrapped_rows = Some(rows);
         for (_, event) in input.get_precompile_events(SyscallCode::SHA_EXTEND).iter() {
             let event =
                 if let PrecompileEvent::ShaExtend(event) = event { event } else { unreachable!() };
-            self.event_to_rows(event, &mut wrapped_rows, &mut new_byte_lookup_events);
+            self.event_to_rows(
+                event,
+                &mut wrapped_rows,
+                &mut new_byte_lookup_events,
+                &mut new_byte3_lookup_events,
+            );
         }
 
         let mut rows = wrapped_rows.unwrap();
@@ -70,23 +78,28 @@ impl<F: PrimeField32> MachineAir<F> for ShaExtendChip {
         let events = input.get_precompile_events(SyscallCode::SHA_EXTEND);
         let chunk_size = std::cmp::max(events.len() / num_cpus::get(), 1);
 
-        let blu_batches = events
+        let (blu_batches, b3lu_batches): (
+            Vec<HashMap<u32, HashMap<ByteLookupEvent, usize>>>,
+            Vec<HashMap<u32, HashMap<Byte3LookupEvent, usize>>>,
+        ) = events
             .par_chunks(chunk_size)
             .map(|events| {
                 let mut blu: HashMap<u32, HashMap<ByteLookupEvent, usize>> = HashMap::new();
+                let mut b3lu: HashMap<u32, HashMap<Byte3LookupEvent, usize>> = HashMap::new();
                 events.iter().for_each(|(_, event)| {
                     let event = if let PrecompileEvent::ShaExtend(event) = event {
                         event
                     } else {
                         unreachable!()
                     };
-                    self.event_to_rows::<F>(event, &mut None, &mut blu);
+                    self.event_to_rows::<F>(event, &mut None, &mut blu, &mut b3lu);
                 });
-                blu
+                (blu, b3lu)
             })
-            .collect::<Vec<_>>();
+            .unzip();
 
         output.add_sharded_byte_lookup_events(blu_batches.iter().collect_vec());
+        output.add_sharded_byte3_lookup_events(b3lu_batches.iter().collect_vec());
     }
 
     fn included(&self, shard: &Self::Record) -> bool {
@@ -104,6 +117,7 @@ impl ShaExtendChip {
         event: &ShaExtendEvent,
         rows: &mut Option<Vec<[F; NUM_SHA_EXTEND_COLS]>>,
         blu: &mut impl ByteRecord,
+        b3lu: &mut impl Byte3Record,
     ) {
         let shard = event.shard;
         for j in 0..48usize {
@@ -126,9 +140,14 @@ impl ShaExtendChip {
             let w_i_minus_15_rr_7 = cols.w_i_minus_15_rr_7.populate(blu, shard, w_i_minus_15, 7);
             let w_i_minus_15_rr_18 = cols.w_i_minus_15_rr_18.populate(blu, shard, w_i_minus_15, 18);
             let w_i_minus_15_rs_3 = cols.w_i_minus_15_rs_3.populate(blu, shard, w_i_minus_15, 3);
-            let s0_intermediate =
-                cols.s0_intermediate.populate(blu, shard, w_i_minus_15_rr_7, w_i_minus_15_rr_18);
-            let s0 = cols.s0.populate(blu, shard, s0_intermediate, w_i_minus_15_rs_3);
+
+            let s0 = cols.s0.populate(
+                b3lu,
+                shard,
+                w_i_minus_15_rr_7,
+                w_i_minus_15_rr_18,
+                w_i_minus_15_rs_3,
+            );
 
             // `s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift
             // 10)`.
@@ -136,9 +155,13 @@ impl ShaExtendChip {
             let w_i_minus_2_rr_17 = cols.w_i_minus_2_rr_17.populate(blu, shard, w_i_minus_2, 17);
             let w_i_minus_2_rr_19 = cols.w_i_minus_2_rr_19.populate(blu, shard, w_i_minus_2, 19);
             let w_i_minus_2_rs_10 = cols.w_i_minus_2_rs_10.populate(blu, shard, w_i_minus_2, 10);
-            let s1_intermediate =
-                cols.s1_intermediate.populate(blu, shard, w_i_minus_2_rr_17, w_i_minus_2_rr_19);
-            let s1 = cols.s1.populate(blu, shard, s1_intermediate, w_i_minus_2_rs_10);
+            let s1 = cols.s1.populate(
+                b3lu,
+                shard,
+                w_i_minus_2_rr_17,
+                w_i_minus_2_rr_19,
+                w_i_minus_2_rs_10,
+            );
 
             // Compute `s2`.
             let w_i_minus_7 = event.w_i_minus_7_reads[j].value;

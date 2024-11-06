@@ -6,8 +6,8 @@ use sp1_stark::Word;
 use crate::{
     memory::MemoryReadWriteCols,
     operations::{
-        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
-        NotOperation, Xor3Operation, XorOperation,
+        ch::CHOperation, maj::MAJOperation, Add3Operation, Add5Operation, AddOperation,
+        FixedRotateRightOperation, Xor3Operation,
     },
 };
 
@@ -66,11 +66,8 @@ pub struct ShaCompressCols<T> {
     /// `S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)`.
     pub s1: Xor3Operation<T>,
 
-    pub e_and_f: AndOperation<T>,
-    pub e_not: NotOperation<T>,
-    pub e_not_and_g: AndOperation<T>,
     /// `ch := (e and f) xor ((not e) and g)`.
-    pub ch: XorOperation<T>,
+    pub ch: CHOperation<T>,
 
     /// `temp1 := h + S1 + ch + k[i] + w[i]`.
     pub temp1: Add5Operation<T>,
@@ -78,16 +75,11 @@ pub struct ShaCompressCols<T> {
     pub a_rr_2: FixedRotateRightOperation<T>,
     pub a_rr_13: FixedRotateRightOperation<T>,
     pub a_rr_22: FixedRotateRightOperation<T>,
-    pub s0_intermediate: XorOperation<T>,
     /// `S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22)`.
-    pub s0: XorOperation<T>,
+    pub s0: Xor3Operation<T>,
 
-    pub a_and_b: AndOperation<T>,
-    pub a_and_c: AndOperation<T>,
-    pub b_and_c: AndOperation<T>,
-    pub maj_intermediate: XorOperation<T>,
     /// `maj := (a and b) xor (a and c) xor (b and c)`.
-    pub maj: XorOperation<T>,
+    pub maj: MAJOperation<T>,
 
     /// The next value of `e` is `d + temp1`.
     pub d_add_temp1: AddOperation<T>,

@@ -223,24 +223,16 @@ impl ShaCompressChip {
             let e_rr_25 = cols.e_rr_25.populate(blu, shard, e, 25);
             let s1 = cols.s1.populate(blu3, shard, e_rr_6, e_rr_11, e_rr_25);
 
-            let e_and_f = cols.e_and_f.populate(blu, shard, e, f);
-            let e_not = cols.e_not.populate(blu, shard, e);
-            let e_not_and_g = cols.e_not_and_g.populate(blu, shard, e_not, g);
-            let ch = cols.ch.populate(blu, shard, e_and_f, e_not_and_g);
+            let ch = cols.ch.populate(blu3, shard, e, f, g);
 
             let temp1 = cols.temp1.populate(blu, shard, h, s1, ch, event.w[j], SHA_COMPRESS_K[j]);
 
             let a_rr_2 = cols.a_rr_2.populate(blu, shard, a, 2);
             let a_rr_13 = cols.a_rr_13.populate(blu, shard, a, 13);
             let a_rr_22 = cols.a_rr_22.populate(blu, shard, a, 22);
-            let s0_intermediate = cols.s0_intermediate.populate(blu, shard, a_rr_2, a_rr_13);
-            let s0 = cols.s0.populate(blu, shard, s0_intermediate, a_rr_22);
+            let s0 = cols.s0.populate(blu3, shard, a_rr_2, a_rr_13, a_rr_22);
 
-            let a_and_b = cols.a_and_b.populate(blu, shard, a, b);
-            let a_and_c = cols.a_and_c.populate(blu, shard, a, c);
-            let b_and_c = cols.b_and_c.populate(blu, shard, b, c);
-            let maj_intermediate = cols.maj_intermediate.populate(blu, shard, a_and_b, a_and_c);
-            let maj = cols.maj.populate(blu, shard, maj_intermediate, b_and_c);
+            let maj = cols.maj.populate(blu3, shard, a, b, c);
 
             let d_add_temp1 = cols.d_add_temp1.populate(blu, shard, d, temp1);
             let temp1_add_s0_add_maj =

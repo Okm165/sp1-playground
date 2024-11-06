@@ -9,7 +9,7 @@ use crate::{
     air::{MemoryAirBuilder, WordAirBuilder},
     memory::MemoryCols,
     operations::{
-        Add4Operation, FixedRotateRightOperation, FixedShiftRightOperation, XorOperation,
+        Add4Operation, FixedRotateRightOperation, FixedShiftRightOperation, Xor3Operation,
     },
 };
 
@@ -118,19 +118,12 @@ where
             local.w_i_minus_15_rs_3,
             local.is_real,
         );
-        // (w[i-15] rightrotate 7) xor (w[i-15] rightrotate 18)
-        XorOperation::<AB::F>::eval(
+        // s0 := (w[i-15] rightrotate 7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift 3)
+        Xor3Operation::<AB::F>::eval(
             builder,
+            local.w_i_minus_15_rs_3.value,
             local.w_i_minus_15_rr_7.value,
             local.w_i_minus_15_rr_18.value,
-            local.s0_intermediate,
-            local.is_real,
-        );
-        // s0 := (w[i-15] rightrotate 7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift 3)
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.s0_intermediate.value,
-            local.w_i_minus_15_rs_3.value,
             local.s0,
             local.is_real,
         );
@@ -160,18 +153,11 @@ where
             local.w_i_minus_2_rs_10,
             local.is_real,
         );
-        // (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19)
-        XorOperation::<AB::F>::eval(
+        // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
+        Xor3Operation::<AB::F>::eval(
             builder,
             local.w_i_minus_2_rr_17.value,
             local.w_i_minus_2_rr_19.value,
-            local.s1_intermediate,
-            local.is_real,
-        );
-        // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
-        XorOperation::<AB::F>::eval(
-            builder,
-            local.s1_intermediate.value,
             local.w_i_minus_2_rs_10.value,
             local.s1,
             local.is_real,
