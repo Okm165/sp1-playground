@@ -215,10 +215,9 @@ impl ShaCompressChip {
             let s1_intermediate = cols.s1_intermediate.populate(blu, shard, e_rr_6, e_rr_11);
             let s1 = cols.s1.populate(blu, shard, s1_intermediate, e_rr_25);
 
-            let e_and_f = cols.e_and_f.populate(blu, shard, e, f);
-            let e_not = cols.e_not.populate(blu, shard, e);
-            let e_not_and_g = cols.e_not_and_g.populate(blu, shard, e_not, g);
-            let ch = cols.ch.populate(blu, shard, e_and_f, e_not_and_g);
+            let f_xor_g = cols.f_xor_g.populate(blu, shard, f, g);
+            let e_and_f_xor_g = cols.e_and_f_xor_g.populate(blu, shard, a, f_xor_g);
+            let ch = cols.ch.populate(blu, shard, g, e_and_f_xor_g);
 
             let temp1 = cols.temp1.populate(blu, shard, h, s1, ch, event.w[j], SHA_COMPRESS_K[j]);
 
@@ -228,16 +227,13 @@ impl ShaCompressChip {
             let s0_intermediate = cols.s0_intermediate.populate(blu, shard, a_rr_2, a_rr_13);
             let s0 = cols.s0.populate(blu, shard, s0_intermediate, a_rr_22);
 
-            let a_and_b = cols.a_and_b.populate(blu, shard, a, b);
-            let a_and_c = cols.a_and_c.populate(blu, shard, a, c);
+            let b_xor_c = cols.b_xor_c.populate(blu, shard, b, c);
+            let a_and_b_xor_c = cols.a_and_b_xor_c.populate(blu, shard, a, b_xor_c);
             let b_and_c = cols.b_and_c.populate(blu, shard, b, c);
-            let maj_intermediate = cols.maj_intermediate.populate(blu, shard, a_and_b, a_and_c);
-            let maj = cols.maj.populate(blu, shard, maj_intermediate, b_and_c);
-
-            let temp2 = cols.temp2.populate(blu, shard, s0, maj);
+            let maj = cols.maj.populate(blu, shard, a_and_b_xor_c, b_and_c);
 
             let d_add_temp1 = cols.d_add_temp1.populate(blu, shard, d, temp1);
-            let temp1_add_temp2 = cols.temp1_add_temp2.populate(blu, shard, temp1, temp2);
+            let temp1_add_temp2 = cols.temp1_add_temp2.populate(blu, shard, temp1, s0, maj);
 
             h_array[7] = g;
             h_array[6] = f;

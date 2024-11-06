@@ -6,7 +6,7 @@ use sp1_stark::Word;
 use crate::{
     memory::MemoryReadWriteCols,
     operations::{
-        Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation, NotOperation,
+        Add3Operation, Add5Operation, AddOperation, AndOperation, FixedRotateRightOperation,
         XorOperation,
     },
 };
@@ -67,9 +67,8 @@ pub struct ShaCompressCols<T> {
     /// `S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)`.
     pub s1: XorOperation<T>,
 
-    pub e_and_f: AndOperation<T>,
-    pub e_not: NotOperation<T>,
-    pub e_not_and_g: AndOperation<T>,
+    pub f_xor_g: XorOperation<T>,
+    pub e_and_f_xor_g: AndOperation<T>,
     /// `ch := (e and f) xor ((not e) and g)`.
     pub ch: XorOperation<T>,
 
@@ -83,20 +82,16 @@ pub struct ShaCompressCols<T> {
     /// `S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22)`.
     pub s0: XorOperation<T>,
 
-    pub a_and_b: AndOperation<T>,
-    pub a_and_c: AndOperation<T>,
+    pub b_xor_c: XorOperation<T>,
+    pub a_and_b_xor_c: AndOperation<T>,
     pub b_and_c: AndOperation<T>,
-    pub maj_intermediate: XorOperation<T>,
     /// `maj := (a and b) xor (a and c) xor (b and c)`.
     pub maj: XorOperation<T>,
 
-    /// `temp2 := S0 + maj`.
-    pub temp2: AddOperation<T>,
-
     /// The next value of `e` is `d + temp1`.
     pub d_add_temp1: AddOperation<T>,
-    /// The next value of `a` is `temp1 + temp2`.
-    pub temp1_add_temp2: AddOperation<T>,
+    /// The next value of `a` is `temp1 + S0 + maj`.
+    pub temp1_add_temp2: Add3Operation<T>,
 
     /// During finalize, this is one of a-h and is being written into `mem`.
     pub finalized_operand: Word<T>,
