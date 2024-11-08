@@ -1,5 +1,10 @@
-use super::{columns::NUM_POSEIDON2PERM_COLS, Poseidon2PermChip};
-use crate::syscall::precompiles::poseidon2::{permutation::columns::Poseidon2PermCols, WIDTH};
+use super::{
+    columns::{FullRound, PartialRound, NUM_POSEIDON2PERM_COLS},
+    Poseidon2PermChip,
+};
+use crate::syscall::precompiles::poseidon2::{
+    permutation::columns::Poseidon2PermCols, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
+};
 use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
@@ -8,7 +13,7 @@ use sp1_core_executor::{
     syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
-use sp1_primitives::consts::WORD_SIZE;
+use sp1_primitives::RC_16_30_U32;
 use sp1_stark::air::MachineAir;
 use sp1_stark::MachineRecord;
 use std::borrow::BorrowMut;
@@ -101,21 +106,78 @@ impl Poseidon2PermChip {
     ) {
         let cols: &mut Poseidon2PermCols<F> = row.as_mut_slice().borrow_mut();
 
-        // Decode input
-        let input: Vec<F> = event.input.iter().map(|e| F::from_canonical_u32(*e)).collect();
-
         // Assign basic values to the columns.
         cols.is_real = F::one();
         cols.shard = F::from_canonical_u32(event.shard);
         cols.clk = F::from_canonical_u32(event.clk);
         cols.input_ptr = F::from_canonical_u32(event.input_ptr);
 
-        // Populate memory columns. Q!
-        for i in 0..(WIDTH / WORD_SIZE) {
+        // Populate memory columns.
+        for i in 0..WIDTH {
             cols.input_memory[i]
                 .populate(MemoryRecordEnum::Write(event.input_memory_records[i]), blu);
+            cols.input_range_checker[i].populate(event.input_memory_records[i].prev_value);
+            cols.state[i] = F::from_canonical_u32(event.input_memory_records[i].prev_value);
         }
 
-        todo!();
+        // Perform permutation on the state
+        Self::external_linear_layer(&mut cols.state);
+
+        for round in 0..NUM_FULL_ROUNDS / 2 {
+            Self::populate_full_round(
+                &mut cols.state,
+                &cols.beginning_full_rounds[round],
+                &RC_16_30_U32[round].map(F::from_canonical_u32),
+            );
+        }
+
+        for round in 0..NUM_PARTIAL_ROUNDS {
+            Self::populate_partial_round(
+                &mut cols.state,
+                &cols.partial_rounds[round],
+                &RC_16_30_U32[round].map(F::from_canonical_u32)[0],
+            );
+        }
+
+        for round in 0..NUM_FULL_ROUNDS / 2 {
+            Self::populate_full_round(
+                &mut cols.state,
+                &cols.ending_full_rounds[round],
+                &RC_16_30_U32[round].map(F::from_canonical_u32),
+            );
+        }
+    }
+
+    pub fn populate_full_round<F: PrimeField32>(
+        state: &mut [F; WIDTH],
+        full_round: &FullRound<F>,
+        round_constants: &[F; WIDTH],
+    ) {
+        for (s, r) in state.iter_mut().zip(round_constants.iter()) {
+            *s = *s + *r;
+            Self::populate_sbox(s);
+        }
+        Self::external_linear_layer(state);
+        for (state_i, post_i) in state.iter_mut().zip(full_round.post) {
+            *state_i = post_i;
+        }
+    }
+
+    pub fn populate_partial_round<F: PrimeField32>(
+        state: &mut [F; WIDTH],
+        partial_round: &PartialRound<F>,
+        round_constant: &F,
+    ) {
+        state[0] = state[0] + *round_constant;
+        Self::populate_sbox(&mut state[0]);
+
+        state[0] = partial_round.post_sbox;
+
+        Self::internal_linear_layer(state);
+    }
+
+    #[inline]
+    pub fn populate_sbox<F: PrimeField32>(x: &mut F) {
+        *x = x.exp_const_u64::<7>();
     }
 }

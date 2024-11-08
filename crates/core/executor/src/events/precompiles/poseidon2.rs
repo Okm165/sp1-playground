@@ -15,8 +15,6 @@ pub struct Poseidon2PermEvent {
     pub clk: u32,
     /// The pointer to the x value.
     pub input_ptr: u32,
-    /// The x value as a list of words.
-    pub input: Vec<u32>,
     /// The memory records for the x value.
     pub input_memory_records: Vec<MemoryWriteRecord>,
     /// The local memory access records.
