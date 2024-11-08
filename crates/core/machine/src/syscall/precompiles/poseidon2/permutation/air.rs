@@ -1,3 +1,4 @@
+use crate::air::MemoryAirBuilder;
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_baby_bear::MONTY_INVERSE;
@@ -5,8 +6,14 @@ use p3_baby_bear::POSEIDON2_INTERNAL_MATRIX_DIAG_16_BABYBEAR_MONTY;
 use p3_field::AbstractField;
 use p3_field::PrimeField32;
 use p3_matrix::Matrix;
+use sp1_core_executor::syscalls::SyscallCode;
 use sp1_primitives::RC_16_30_U32;
+use sp1_stark::air::BaseAirBuilder;
+use sp1_stark::air::InteractionScope;
 use sp1_stark::air::SP1AirBuilder;
+
+use crate::memory::value_as_limbs;
+use crate::memory::MemoryCols;
 
 use super::{
     columns::{FullRound, PartialRound, Poseidon2PermCols, NUM_POSEIDON2PERM_COLS},
@@ -33,8 +40,14 @@ where
         builder.when_first_row().assert_zero(local.nonce);
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
+        // Load from memory to the state
+        for (i, word) in local.input_memory.iter().enumerate() {
+            builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
+        }
+
         let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
+        // Perform permutation on the state
         Self::external_linear_layer::<AB>(&mut state);
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
@@ -63,6 +76,33 @@ where
                 builder,
             );
         }
+
+        // Assert that the permuted state is being written to input_memory.
+        builder.when(local.is_real).assert_all_eq(local.state, value_as_limbs(&local.input_memory));
+
+        // Read and write input_memory.
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into() + AB::Expr::one(),
+            local.input_ptr,
+            &local.input_memory,
+            local.is_real,
+        );
+
+        // Receive the arguments.
+        builder.receive_syscall(
+            local.shard,
+            local.clk,
+            local.nonce,
+            AB::F::from_canonical_u32(SyscallCode::POSEIDON2_PERMUTE.syscall_id()),
+            local.input_ptr,
+            AB::Expr::zero(),
+            local.is_real,
+            InteractionScope::Local,
+        );
+
+        // Assert that is_real is a boolean.
+        builder.assert_bool(local.is_real);
     }
 }
 
