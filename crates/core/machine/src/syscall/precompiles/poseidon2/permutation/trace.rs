@@ -1,3 +1,5 @@
+use std::borrow::BorrowMut;
+
 use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 use sp1_core_executor::{
@@ -5,6 +7,8 @@ use sp1_core_executor::{
     ExecutionRecord, Program,
 };
 use sp1_stark::air::MachineAir;
+
+use crate::syscall::precompiles::poseidon2::permutation::columns::Poseidon2PermCols;
 
 use super::{columns::NUM_POSEIDON2PERM_COLS, Poseidon2PermChip};
 
@@ -42,6 +46,13 @@ impl Poseidon2PermChip {
         blu: &mut impl ByteRecord,
     ) {
         let shard = event.shard;
+
+        let mut row = [F::zero(); NUM_POSEIDON2PERM_COLS];
+        let cols: &mut Poseidon2PermCols<F> = row.as_mut_slice().borrow_mut();
+
+        cols.shard = F::from_canonical_u32(event.shard);
+        cols.clk = F::from_canonical_u32(event.clk);
+
         todo!()
     }
 }

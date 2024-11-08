@@ -33,7 +33,7 @@ where
         builder.when_first_row().assert_zero(local.nonce);
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
-        let mut state: [AB::Expr; WIDTH] = local.inputs.map(|x| x.into());
+        let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
         Self::external_linear_layer::<AB>(&mut state);
 

@@ -11,7 +11,8 @@ pub struct Poseidon2PermCols<T> {
     pub shard: T,
     pub nonce: T,
     pub clk: T,
-    pub inputs: [T; WIDTH],
+
+    pub state: [T; WIDTH],
 
     /// Beginning Full Rounds
     pub beginning_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS],
