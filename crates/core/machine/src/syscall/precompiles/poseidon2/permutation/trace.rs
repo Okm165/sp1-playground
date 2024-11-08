@@ -5,6 +5,7 @@ use super::{
 use crate::syscall::precompiles::poseidon2::{
     permutation::columns::Poseidon2PermCols, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
 };
+use crate::utils::pad_rows_fixed;
 use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
@@ -65,12 +66,18 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermChip {
             })
             .collect::<Vec<_>>();
 
-        //  Generate the trace rows for each event.
+        // Generate the trace rows for each event.
         let mut rows = Vec::new();
         for (row, mut record) in rows_and_records {
             rows.extend(row);
             output.append(&mut record);
         }
+
+        pad_rows_fixed(
+            &mut rows,
+            || [F::zero(); NUM_POSEIDON2PERM_COLS],
+            input.fixed_log2_rows::<F, _>(self),
+        );
 
         // Convert the trace to a row major matrix.
         let mut trace = RowMajorMatrix::new(
