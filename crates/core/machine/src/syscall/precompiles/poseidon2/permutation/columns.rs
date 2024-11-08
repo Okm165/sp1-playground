@@ -1,5 +1,5 @@
 use super::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
-use crate::memory::MemoryReadWriteCols;
+use crate::{memory::MemoryReadWriteCols, operations::BabyBearWordRangeChecker};
 use sp1_derive::AlignedBorrow;
 pub const NUM_POSEIDON2PERM_COLS: usize = size_of::<Poseidon2PermCols<u8>>();
 
@@ -15,6 +15,7 @@ pub struct Poseidon2PermCols<T> {
 
     pub input_ptr: T,
     pub input_memory: [MemoryReadWriteCols<T>; WIDTH],
+    pub input_range_checker: [BabyBearWordRangeChecker<T>; WIDTH],
 
     pub state: [T; WIDTH],
 

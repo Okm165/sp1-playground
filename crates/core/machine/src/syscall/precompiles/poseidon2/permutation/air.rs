@@ -1,4 +1,5 @@
 use crate::air::MemoryAirBuilder;
+use crate::operations::BabyBearWordRangeChecker;
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_baby_bear::MONTY_INVERSE;
@@ -42,6 +43,12 @@ where
 
         // Load from memory to the state
         for (i, word) in local.input_memory.iter().enumerate() {
+            BabyBearWordRangeChecker::<AB::F>::range_check(
+                builder,
+                *word.prev_value(),
+                local.input_range_checker[i],
+                local.is_real.into(),
+            );
             builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
         }
 
