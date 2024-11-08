@@ -63,17 +63,6 @@ where
                 builder,
             );
         }
-
-        // builder.receive_syscall(
-        //     local.shard,
-        //     local.clk,
-        //     local.nonce,
-        //     AB::F::from_canonical_u32(SyscallCode::SHA_COMPRESS.syscall_id()),
-        //     local.w_ptr,
-        //     local.h_ptr,
-        //     local.start,
-        //     InteractionScope::Local,
-        // );
     }
 }
 
