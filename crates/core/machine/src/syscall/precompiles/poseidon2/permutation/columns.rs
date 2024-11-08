@@ -1,4 +1,5 @@
 use super::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
+use crate::memory::MemoryReadWriteCols;
 use sp1_derive::AlignedBorrow;
 pub const NUM_POSEIDON2PERM_COLS: usize = size_of::<Poseidon2PermCols<u8>>();
 
@@ -12,6 +13,9 @@ pub struct Poseidon2PermCols<T> {
     pub nonce: T,
     pub clk: T,
 
+    pub input_ptr: T,
+    pub input_memory: [MemoryReadWriteCols<T>; WIDTH],
+
     pub state: [T; WIDTH],
 
     /// Beginning Full Rounds
@@ -22,6 +26,8 @@ pub struct Poseidon2PermCols<T> {
 
     /// Ending Full Rounds
     pub ending_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS],
+
+    pub is_real: T,
 }
 
 /// Full round columns.
