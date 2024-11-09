@@ -1,31 +1,29 @@
 use super::{
-    columns::{FullRound, PartialRound, NUM_POSEIDON2PERM_COLS},
-    Poseidon2PermChip,
+    columns::{FullRound, PartialRound, NUM_POSEIDON2_PERMUTE_COLS},
+    Poseidon2PermuteChip,
 };
 use crate::syscall::precompiles::poseidon2::{
-    permutation::columns::Poseidon2PermCols, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
+    permutation::columns::Poseidon2PermuteCols, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
 };
 use crate::utils::pad_rows_fixed;
 use p3_field::PrimeField32;
-use p3_matrix::dense::RowMajorMatrix;
-use p3_matrix::Matrix;
+use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use sp1_core_executor::{
-    events::{ByteRecord, MemoryRecordEnum, Poseidon2PermEvent, PrecompileEvent},
+    events::{ByteRecord, MemoryRecordEnum, Poseidon2PermuteEvent, PrecompileEvent},
     syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
 use sp1_primitives::RC_16_30_U32;
-use sp1_stark::air::MachineAir;
-use sp1_stark::MachineRecord;
+use sp1_stark::{air::MachineAir, MachineRecord};
 use std::borrow::BorrowMut;
 
-impl<F: PrimeField32> MachineAir<F> for Poseidon2PermChip {
+impl<F: PrimeField32> MachineAir<F> for Poseidon2PermuteChip {
     type Record = ExecutionRecord;
 
     type Program = Program;
 
     fn name(&self) -> String {
-        "Poseidon2Perm".to_string()
+        "Poseidon2Permute".to_string()
     }
 
     fn generate_trace(
@@ -44,15 +42,15 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermChip {
                 let rows = events
                     .iter()
                     .map(|(_, event)| {
-                        let event = if let PrecompileEvent::Poseidon2Perm(event) = event {
+                        let event = if let PrecompileEvent::Poseidon2Permute(event) = event {
                             event
                         } else {
                             unreachable!()
                         };
-                        let mut row: [F; NUM_POSEIDON2PERM_COLS] =
-                            [F::zero(); NUM_POSEIDON2PERM_COLS];
+                        let mut row: [F; NUM_POSEIDON2_PERMUTE_COLS] =
+                            [F::zero(); NUM_POSEIDON2_PERMUTE_COLS];
 
-                        Poseidon2PermChip::event_to_row(
+                        Poseidon2PermuteChip::event_to_row(
                             event,
                             &mut row,
                             &mut new_byte_lookup_events,
@@ -75,20 +73,20 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermChip {
 
         pad_rows_fixed(
             &mut rows,
-            || [F::zero(); NUM_POSEIDON2PERM_COLS],
+            || [F::zero(); NUM_POSEIDON2_PERMUTE_COLS],
             input.fixed_log2_rows::<F, _>(self),
         );
 
         // Convert the trace to a row major matrix.
         let mut trace = RowMajorMatrix::new(
             rows.into_iter().flatten().collect::<Vec<_>>(),
-            NUM_POSEIDON2PERM_COLS,
+            NUM_POSEIDON2_PERMUTE_COLS,
         );
 
         // Write the nonces to the trace.
         for i in 0..trace.height() {
-            let cols: &mut Poseidon2PermCols<F> = trace.values
-                [i * NUM_POSEIDON2PERM_COLS..(i + 1) * NUM_POSEIDON2PERM_COLS]
+            let cols: &mut Poseidon2PermuteCols<F> = trace.values
+                [i * NUM_POSEIDON2_PERMUTE_COLS..(i + 1) * NUM_POSEIDON2_PERMUTE_COLS]
                 .borrow_mut();
             cols.nonce = F::from_canonical_usize(i);
         }
@@ -105,13 +103,13 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermChip {
     }
 }
 
-impl Poseidon2PermChip {
+impl Poseidon2PermuteChip {
     fn event_to_row<F: PrimeField32>(
-        event: &Poseidon2PermEvent,
-        row: &mut [F; NUM_POSEIDON2PERM_COLS],
+        event: &Poseidon2PermuteEvent,
+        row: &mut [F; NUM_POSEIDON2_PERMUTE_COLS],
         blu: &mut impl ByteRecord,
     ) {
-        let cols: &mut Poseidon2PermCols<F> = row.as_mut_slice().borrow_mut();
+        let cols: &mut Poseidon2PermuteCols<F> = row.as_mut_slice().borrow_mut();
 
         // Assign basic values to the columns.
         cols.is_real = F::one();

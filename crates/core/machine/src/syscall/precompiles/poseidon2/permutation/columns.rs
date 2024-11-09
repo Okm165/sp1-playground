@@ -1,13 +1,13 @@
 use super::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 use crate::{memory::MemoryReadWriteCols, operations::BabyBearWordRangeChecker};
 use sp1_derive::AlignedBorrow;
-pub const NUM_POSEIDON2PERM_COLS: usize = size_of::<Poseidon2PermCols<u8>>();
+pub const NUM_POSEIDON2_PERMUTE_COLS: usize = size_of::<Poseidon2PermuteCols<u8>>();
 
-/// A set of columns needed to compute the Poseidon2Permutation function.
+/// A set of columns needed to compute the Poseidon2 permutation function.
 ///
 #[derive(AlignedBorrow)]
 #[repr(C)]
-pub struct Poseidon2PermCols<T> {
+pub struct Poseidon2PermuteCols<T> {
     /// Inputs.
     pub shard: T,
     pub nonce: T,

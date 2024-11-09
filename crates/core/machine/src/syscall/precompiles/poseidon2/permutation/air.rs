@@ -1,41 +1,35 @@
 use crate::air::MemoryAirBuilder;
+use crate::memory::{value_as_limbs, MemoryCols};
 use crate::operations::BabyBearWordRangeChecker;
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
-use p3_baby_bear::MONTY_INVERSE;
-use p3_baby_bear::POSEIDON2_INTERNAL_MATRIX_DIAG_16_BABYBEAR_MONTY;
-use p3_field::AbstractField;
-use p3_field::PrimeField32;
+use p3_baby_bear::{MONTY_INVERSE, POSEIDON2_INTERNAL_MATRIX_DIAG_16_BABYBEAR_MONTY};
+use p3_field::{AbstractField, PrimeField32};
 use p3_matrix::Matrix;
 use sp1_core_executor::syscalls::SyscallCode;
 use sp1_primitives::RC_16_30_U32;
-use sp1_stark::air::BaseAirBuilder;
-use sp1_stark::air::InteractionScope;
-use sp1_stark::air::SP1AirBuilder;
-
-use crate::memory::value_as_limbs;
-use crate::memory::MemoryCols;
+use sp1_stark::air::{BaseAirBuilder, InteractionScope, SP1AirBuilder};
 
 use super::{
-    columns::{FullRound, PartialRound, Poseidon2PermCols, NUM_POSEIDON2PERM_COLS},
-    Poseidon2PermChip, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
+    columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
+    Poseidon2PermuteChip, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
 };
 
-impl<F> BaseAir<F> for Poseidon2PermChip {
+impl<F> BaseAir<F> for Poseidon2PermuteChip {
     fn width(&self) -> usize {
-        NUM_POSEIDON2PERM_COLS
+        NUM_POSEIDON2_PERMUTE_COLS
     }
 }
 
-impl<AB> Air<AB> for Poseidon2PermChip
+impl<AB> Air<AB> for Poseidon2PermuteChip
 where
     AB: SP1AirBuilder,
 {
     fn eval(&self, builder: &mut AB) {
         let main = builder.main();
         let (local, next) = (main.row_slice(0), main.row_slice(1));
-        let local: &Poseidon2PermCols<AB::Var> = (*local).borrow();
-        let next: &Poseidon2PermCols<AB::Var> = (*next).borrow();
+        let local: &Poseidon2PermuteCols<AB::Var> = (*local).borrow();
+        let next: &Poseidon2PermuteCols<AB::Var> = (*next).borrow();
 
         // Constrain the incrementing nonce.
         builder.when_first_row().assert_zero(local.nonce);
@@ -113,7 +107,7 @@ where
     }
 }
 
-impl Poseidon2PermChip {
+impl Poseidon2PermuteChip {
     pub fn external_linear_layer<F: AbstractField>(state: &mut [F; WIDTH]) {
         for j in (0..WIDTH).step_by(4) {
             Self::apply_m_4::<F>(&mut state[j..j + 4]);

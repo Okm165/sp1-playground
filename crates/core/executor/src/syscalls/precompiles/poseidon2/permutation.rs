@@ -1,11 +1,11 @@
 use crate::{
-    events::{Poseidon2PermEvent, PrecompileEvent},
+    events::{Poseidon2PermuteEvent, PrecompileEvent},
     syscalls::{Syscall, SyscallCode, SyscallContext},
 };
 
-pub(crate) struct Poseidon2PermutationSyscall;
+pub(crate) struct Poseidon2PermuteSyscall;
 
-impl Syscall for Poseidon2PermutationSyscall {
+impl Syscall for Poseidon2PermuteSyscall {
     fn num_extra_cycles(&self) -> u32 {
         1
     }
@@ -30,7 +30,7 @@ impl Syscall for Poseidon2PermutationSyscall {
         // Push the SHA extend event.
         let lookup_id = rt.syscall_lookup_id;
         let shard = rt.current_shard();
-        let event = PrecompileEvent::Poseidon2Perm(Poseidon2PermEvent {
+        let event = PrecompileEvent::Poseidon2Permute(Poseidon2PermuteEvent {
             lookup_id,
             shard,
             clk: clk_init,

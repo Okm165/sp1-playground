@@ -15,7 +15,7 @@ use crate::{
     riscv::MemoryChipType::{Finalize, Initialize},
     syscall::precompiles::{
         fptower::{Fp2AddSubAssignChip, Fp2MulAssignChip, FpOpChip},
-        poseidon2::Poseidon2PermChip,
+        poseidon2::Poseidon2PermuteChip,
     },
 };
 use hashbrown::{HashMap, HashSet};
@@ -108,7 +108,7 @@ pub enum RiscvAir<F: PrimeField32> {
     /// A precompile for sha256 compress.
     Sha256Compress(ShaCompressChip),
     /// A precompile for Poseidon2 permutation.
-    Poseidon2Perm(Poseidon2PermChip),
+    Poseidon2Permute(Poseidon2PermuteChip),
     /// A precompile for addition on the Elliptic curve ed25519.
     Ed25519Add(EdAddAssignChip<EdwardsCurve<Ed25519Parameters>>),
     /// A precompile for decompressing a point on the Edwards curve ed25519.
@@ -198,9 +198,10 @@ impl<F: PrimeField32> RiscvAir<F> {
         costs.insert(RiscvAirDiscriminants::Sha256Compress, 80 * sha_compress.cost());
         chips.push(sha_compress);
 
-        let poseidon_perm = Chip::new(RiscvAir::Poseidon2Perm(Poseidon2PermChip::default()));
-        costs.insert(RiscvAirDiscriminants::Poseidon2Perm, poseidon_perm.cost());
-        chips.push(poseidon_perm);
+        let poseidon_permute =
+            Chip::new(RiscvAir::Poseidon2Permute(Poseidon2PermuteChip::default()));
+        costs.insert(RiscvAirDiscriminants::Poseidon2Permute, poseidon_permute.cost());
+        chips.push(poseidon_permute);
 
         let ed_add_assign = Chip::new(RiscvAir::Ed25519Add(EdAddAssignChip::<
             EdwardsCurve<Ed25519Parameters>,
@@ -510,7 +511,7 @@ impl<F: PrimeField32> RiscvAir<F> {
             Self::Secp256r1Double(_) => SyscallCode::SECP256R1_DOUBLE,
             Self::Sha256Compress(_) => SyscallCode::SHA_COMPRESS,
             Self::Sha256Extend(_) => SyscallCode::SHA_EXTEND,
-            Self::Poseidon2Perm(_) => SyscallCode::POSEIDON2_PERMUTE,
+            Self::Poseidon2Permute(_) => SyscallCode::POSEIDON2_PERMUTE,
             Self::Uint256Mul(_) => SyscallCode::UINT256_MUL,
             Self::Bls12381Decompress(_) => SyscallCode::BLS12381_DECOMPRESS,
             Self::K256Decompress(_) => SyscallCode::SECP256K1_DECOMPRESS,

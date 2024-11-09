@@ -12,9 +12,9 @@ pub const NUM_ROUNDS: usize = NUM_FULL_ROUNDS + NUM_PARTIAL_ROUNDS;
 
 /// Implements the Poseidon2 permutation operation.
 #[derive(Default)]
-pub struct Poseidon2PermChip;
+pub struct Poseidon2PermuteChip;
 
-impl Poseidon2PermChip {
+impl Poseidon2PermuteChip {
     pub const fn new() -> Self {
         Self {}
     }

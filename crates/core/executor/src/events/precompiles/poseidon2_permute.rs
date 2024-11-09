@@ -6,7 +6,7 @@ use crate::events::{memory::MemoryWriteRecord, LookupId, MemoryLocalEvent};
 ///
 /// This event is emitted when a Poseidon2 Permutation operation is performed.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Poseidon2PermEvent {
+pub struct Poseidon2PermuteEvent {
     /// The lookup identifier.
     pub lookup_id: LookupId,
     /// The shard number.
