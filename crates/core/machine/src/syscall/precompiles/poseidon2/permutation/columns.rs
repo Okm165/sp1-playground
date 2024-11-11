@@ -1,5 +1,7 @@
-use super::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 use crate::{memory::MemoryReadWriteCols, operations::BabyBearWordRangeChecker};
+use sp1_core_executor::syscalls::precompiles::poseidon2::{
+    NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
+};
 use sp1_derive::AlignedBorrow;
 pub const NUM_POSEIDON2_PERMUTE_COLS: usize = size_of::<Poseidon2PermuteCols<u8>>();
 
