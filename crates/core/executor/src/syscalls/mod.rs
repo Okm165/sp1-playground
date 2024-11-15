@@ -6,11 +6,10 @@ mod context;
 mod deferred;
 mod halt;
 mod hint;
+mod precompiles;
 mod unconstrained;
 mod verify;
 mod write;
-
-pub mod precompiles;
 
 use std::sync::Arc;
 

@@ -1,8 +1,6 @@
 use crate::{memory::MemoryReadWriteCols, operations::BabyBearWordRangeChecker};
-use sp1_core_executor::syscalls::precompiles::poseidon2::{
-    NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
-};
 use sp1_derive::AlignedBorrow;
+use sp1_primitives::poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 pub const NUM_POSEIDON2_PERMUTE_COLS: usize = size_of::<Poseidon2PermuteCols<u8>>();
 
 /// A set of columns needed to compute the Poseidon2 permutation function.

@@ -7,13 +7,13 @@ use p3_field::PrimeField32;
 use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use sp1_core_executor::{
     events::{ByteRecord, MemoryRecordEnum, Poseidon2PermuteEvent, PrecompileEvent},
-    syscalls::{
-        precompiles::poseidon2::{self, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH},
-        SyscallCode,
-    },
+    syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
-use sp1_primitives::RC_16_30_U32;
+use sp1_primitives::{
+    external_linear_layer, internal_linear_layer, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS,
+    RC_16_30_U32, WIDTH,
+};
 use sp1_stark::{air::MachineAir, MachineRecord};
 use std::borrow::BorrowMut;
 
@@ -126,13 +126,13 @@ impl Poseidon2PermuteChip {
         }
 
         // Perform permutation on the state
-        poseidon2::permutation::external_linear_layer(&mut cols.state);
+        external_linear_layer(&mut cols.state);
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::populate_full_round(
                 &mut cols.state,
                 &mut cols.beginning_full_rounds[round],
-                &RC_16_30_U32[round].map(F::from_canonical_u32),
+                &RC_16_30_U32[round].map(F::from_wrapped_u32),
             );
         }
 
@@ -140,7 +140,7 @@ impl Poseidon2PermuteChip {
             Self::populate_partial_round(
                 &mut cols.state,
                 &mut cols.partial_rounds[round],
-                &RC_16_30_U32[round].map(F::from_canonical_u32)[0],
+                &RC_16_30_U32[round].map(F::from_wrapped_u32)[0],
             );
         }
 
@@ -148,7 +148,7 @@ impl Poseidon2PermuteChip {
             Self::populate_full_round(
                 &mut cols.state,
                 &mut cols.ending_full_rounds[round],
-                &RC_16_30_U32[round].map(F::from_canonical_u32),
+                &RC_16_30_U32[round].map(F::from_wrapped_u32),
             );
         }
     }
@@ -162,7 +162,7 @@ impl Poseidon2PermuteChip {
             *s = *s + *r;
             Self::populate_sbox(&mut full_round.sbox[i], s);
         }
-        poseidon2::permutation::external_linear_layer(state);
+        external_linear_layer(state);
         for (post_i, state_i) in full_round.post.iter_mut().zip(state) {
             *post_i = *state_i;
         }
@@ -178,7 +178,7 @@ impl Poseidon2PermuteChip {
 
         partial_round.post_sbox = state[0];
 
-        poseidon2::permutation::internal_linear_layer(state);
+        internal_linear_layer(state);
     }
 
     #[inline]

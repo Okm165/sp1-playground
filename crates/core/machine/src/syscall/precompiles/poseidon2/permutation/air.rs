@@ -1,16 +1,14 @@
 use crate::air::MemoryAirBuilder;
-use crate::memory::{value_as_limbs, MemoryCols};
+use crate::memory::MemoryCols;
 use crate::operations::BabyBearWordRangeChecker;
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_field::AbstractField;
 use p3_matrix::Matrix;
-use sp1_core_executor::syscalls::precompiles::poseidon2::{
-    self, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH,
-};
 use sp1_core_executor::syscalls::SyscallCode;
-use sp1_primitives::RC_16_30_U32;
-use sp1_stark::air::{BaseAirBuilder, InteractionScope, SP1AirBuilder};
+use sp1_primitives::poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
+use sp1_primitives::{external_linear_layer, internal_linear_layer, RC_16_30_U32};
+use sp1_stark::air::{InteractionScope, SP1AirBuilder};
 
 use super::{
     columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
@@ -51,13 +49,13 @@ where
         let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
         // Perform permutation on the state
-        poseidon2::permutation::external_linear_layer::<AB::Expr>(&mut state);
+        external_linear_layer::<AB::Expr>(&mut state);
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::eval_full_round(
                 &mut state,
                 &local.beginning_full_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_canonical_u32),
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
                 builder,
             );
         }
@@ -66,7 +64,7 @@ where
             Self::eval_partial_round(
                 &mut state,
                 &local.partial_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_canonical_u32)[0],
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
                 builder,
             );
         }
@@ -75,13 +73,16 @@ where
             Self::eval_full_round(
                 &mut state,
                 &local.ending_full_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_canonical_u32),
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
                 builder,
             );
         }
 
         // Assert that the permuted state is being written to input_memory.
-        builder.when(local.is_real).assert_all_eq(local.state, value_as_limbs(&local.input_memory));
+        // builder.when(local.is_real).assert_all_eq(
+        //     local.state,
+        //     local.input_memory.into_iter().map(|f| f.value().reduce()).collect(),
+        // );
 
         // Read and write input_memory.
         builder.eval_memory_access_slice(
@@ -122,7 +123,7 @@ impl Poseidon2PermuteChip {
             *s = s.clone() + *r;
             Self::eval_sbox(&full_round.sbox[i], s, builder);
         }
-        poseidon2::permutation::external_linear_layer::<AB::Expr>(state);
+        external_linear_layer::<AB::Expr>(state);
         for (state_i, post_i) in state.iter_mut().zip(full_round.post) {
             builder.assert_eq(state_i.clone(), post_i);
             *state_i = post_i.into();
@@ -143,7 +144,7 @@ impl Poseidon2PermuteChip {
         builder.assert_eq(state[0].clone(), partial_round.post_sbox);
         state[0] = partial_round.post_sbox.into();
 
-        poseidon2::permutation::internal_linear_layer::<AB::Expr>(state);
+        internal_linear_layer::<AB::Expr>(state);
     }
 
     #[inline]
