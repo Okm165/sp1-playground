@@ -1,4 +1,4 @@
-use crate::{memory::MemoryReadWriteCols, operations::BabyBearWordRangeChecker};
+use crate::memory::MemoryReadWriteCols;
 use sp1_derive::AlignedBorrow;
 use sp1_primitives::{
     poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH},
@@ -18,18 +18,17 @@ pub struct Poseidon2PermuteCols<T> {
 
     pub input_ptr: T,
     pub input_memory: [MemoryReadWriteCols<T>; STATE_NUM_WORDS],
-    pub input_range_checker: [BabyBearWordRangeChecker<T>; WIDTH],
-
+    // pub input_range_checker: [BabyBearWordRangeChecker<T>; WIDTH],
     pub state: [T; WIDTH],
 
     /// Beginning Full Rounds
-    pub beginning_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS],
+    pub beginning_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS / 2],
 
     /// Partial Rounds
     pub partial_rounds: [PartialRound<T>; NUM_PARTIAL_ROUNDS],
 
     /// Ending Full Rounds
-    pub ending_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS],
+    pub ending_full_rounds: [FullRound<T>; NUM_FULL_ROUNDS / 2],
 
     pub is_real: T,
 }
@@ -44,6 +43,6 @@ pub struct FullRound<T> {
 /// Partial round columns.
 #[repr(C)]
 pub struct PartialRound<T> {
-    pub sbox: [T; WIDTH],
+    pub sbox: T,
     pub post_sbox: T,
 }

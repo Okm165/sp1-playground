@@ -1,6 +1,5 @@
 use crate::air::MemoryAirBuilder;
 use crate::memory::MemoryCols;
-use crate::operations::BabyBearWordRangeChecker;
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_field::AbstractField;
@@ -37,12 +36,6 @@ where
 
         // Load from memory to the state
         for (i, word) in local.input_memory.iter().step_by(2).enumerate() {
-            BabyBearWordRangeChecker::<AB::F>::range_check(
-                builder,
-                *word.prev_value(),
-                local.input_range_checker[i],
-                local.is_real.into(),
-            );
             builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
         }
 
@@ -56,6 +49,7 @@ where
                 &mut state,
                 &local.beginning_full_rounds[round],
                 &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+                local.is_real.into(),
                 builder,
             );
         }
@@ -65,6 +59,7 @@ where
                 &mut state,
                 &local.partial_rounds[round],
                 &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
+                local.is_real.into(),
                 builder,
             );
         }
@@ -74,6 +69,7 @@ where
                 &mut state,
                 &local.ending_full_rounds[round],
                 &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+                local.is_real.into(),
                 builder,
             );
         }
@@ -120,18 +116,18 @@ impl Poseidon2PermuteChip {
         state: &mut [AB::Expr; WIDTH],
         full_round: &FullRound<AB::Var>,
         round_constants: &[AB::F; WIDTH],
+        is_real: AB::Expr,
         builder: &mut AB,
     ) where
         AB: SP1AirBuilder,
     {
         for (i, (s, r)) in state.iter_mut().zip(round_constants.iter()).enumerate() {
             *s = s.clone() + *r;
-            Self::eval_sbox(&full_round.sbox[i], s, builder);
+            Self::eval_sbox(&full_round.sbox[i], s, is_real.clone(), builder);
         }
         external_linear_layer::<AB::Expr>(state);
         for (state_i, post_i) in state.iter_mut().zip(full_round.post) {
-            builder.assert_eq(state_i.clone(), post_i);
-            *state_i = post_i.into();
+            builder.when(is_real.clone()).assert_eq(state_i.clone(), post_i);
         }
     }
 
@@ -139,25 +135,23 @@ impl Poseidon2PermuteChip {
         state: &mut [AB::Expr; WIDTH],
         partial_round: &PartialRound<AB::Var>,
         round_constant: &AB::F,
+        is_real: AB::Expr,
         builder: &mut AB,
     ) where
         AB: SP1AirBuilder,
     {
         state[0] = state[0].clone() + *round_constant;
-        Self::eval_sbox(&partial_round.sbox[0], &mut state[0], builder);
-
-        builder.assert_eq(state[0].clone(), partial_round.post_sbox);
-        state[0] = partial_round.post_sbox.into();
-
+        Self::eval_sbox(&partial_round.sbox, &mut state[0], is_real.clone(), builder);
+        builder.when(is_real).assert_eq(state[0].clone(), partial_round.post_sbox);
         internal_linear_layer::<AB::Expr>(state);
     }
 
     #[inline]
-    pub fn eval_sbox<AB>(sbox: &AB::Var, x: &mut AB::Expr, builder: &mut AB)
+    pub fn eval_sbox<AB>(sbox: &AB::Var, x: &mut AB::Expr, is_real: AB::Expr, builder: &mut AB)
     where
         AB: AirBuilder,
     {
         *x = x.exp_const_u64::<7>();
-        builder.assert_eq(*sbox, x.clone());
+        builder.when(is_real).assert_eq(*sbox, x.clone());
     }
 }

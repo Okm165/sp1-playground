@@ -77,6 +77,8 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermuteChip {
             input.fixed_log2_rows::<F, _>(self),
         );
 
+        println!("rows: {:#?}", rows);
+
         // Convert the trace to a row major matrix.
         let mut trace = RowMajorMatrix::new(
             rows.into_iter().flatten().collect::<Vec<_>>(),
@@ -90,6 +92,8 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermuteChip {
                 .borrow_mut();
             cols.nonce = F::from_canonical_usize(i);
         }
+
+        println!("trace: {:#?}", trace);
 
         trace
     }
@@ -123,7 +127,7 @@ impl Poseidon2PermuteChip {
             blu.add_u8_range_checks(event.shard, &read_record.value.to_le_bytes());
         }
 
-        cols.state = event
+        let mut state: [F; WIDTH] = event
             .state_values
             .iter()
             .step_by(2)
@@ -133,20 +137,51 @@ impl Poseidon2PermuteChip {
             .try_into()
             .unwrap();
 
+        cols.state = state;
+
+        println!("state: {:?}", state.iter().map(|f| f.as_canonical_u32()));
+
         // Perform permutation on the state
-        external_linear_layer(&mut cols.state);
+        external_linear_layer(&mut state);
+
+        println!("external_linear_layer: {:?}", state.iter().map(|f| f.as_canonical_u32()));
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::populate_full_round(
-                &mut cols.state,
+                &mut state,
                 &mut cols.beginning_full_rounds[round],
                 &RC_16_30_U32[round].map(F::from_wrapped_u32),
             );
         }
 
+        println!("populate_full_round: {:?}", state.iter().map(|f| f.as_canonical_u32()));
+        println!(
+            "cols.beginning_full_rounds.sbox: {:?}",
+            cols.beginning_full_rounds
+                .iter()
+                .flat_map(|f| f
+                    .sbox
+                    .into_iter()
+                    .map(|f| f.as_canonical_u32())
+                    .collect::<Vec<u32>>())
+                .collect::<Vec<u32>>()
+        );
+
+        println!(
+            "cols.beginning_full_rounds.post: {:?}",
+            cols.beginning_full_rounds
+                .iter()
+                .flat_map(|f| f
+                    .post
+                    .into_iter()
+                    .map(|f| f.as_canonical_u32())
+                    .collect::<Vec<u32>>())
+                .collect::<Vec<u32>>()
+        );
+
         for round in 0..NUM_PARTIAL_ROUNDS {
             Self::populate_partial_round(
-                &mut cols.state,
+                &mut state,
                 &mut cols.partial_rounds[round],
                 &RC_16_30_U32[round].map(F::from_wrapped_u32)[0],
             );
@@ -154,7 +189,7 @@ impl Poseidon2PermuteChip {
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::populate_full_round(
-                &mut cols.state,
+                &mut state,
                 &mut cols.ending_full_rounds[round],
                 &RC_16_30_U32[round].map(F::from_wrapped_u32),
             );
@@ -187,7 +222,7 @@ impl Poseidon2PermuteChip {
         round_constant: &F,
     ) {
         state[0] = state[0] + *round_constant;
-        Self::populate_sbox(&mut partial_round.sbox[0], &mut state[0]);
+        Self::populate_sbox(&mut partial_round.sbox, &mut state[0]);
 
         partial_round.post_sbox = state[0];
 
