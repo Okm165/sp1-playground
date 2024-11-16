@@ -25,7 +25,7 @@ use precompiles::{
     edwards::{add::EdwardsAddAssignSyscall, decompress::EdwardsDecompressSyscall},
     fptower::{Fp2AddSubSyscall, Fp2MulSyscall, FpOpSyscall},
     keccak256::permute::Keccak256PermuteSyscall,
-    poseidon2::permutation::Poseidon2PermuteSyscall,
+    poseidon2::permute::Poseidon2PermuteSyscall,
     sha256::{compress::Sha256CompressSyscall, extend::Sha256ExtendSyscall},
     uint256::Uint256MulSyscall,
     weierstrass::{

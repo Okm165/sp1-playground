@@ -6,10 +6,8 @@ use p3_baby_bear::BabyBear;
 use p3_field::{AbstractField, PrimeField32};
 use sp1_primitives::{
     external_linear_layer, internal_linear_layer, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS,
-    RC_16_30_U32, WIDTH,
+    RC_16_30_U32, STATE_NUM_WORDS, WIDTH,
 };
-
-type F = BabyBear;
 
 pub(crate) struct Poseidon2PermuteSyscall;
 
@@ -54,11 +52,20 @@ impl Syscall for Poseidon2PermuteSyscall {
 
         let input_ptr_init = input_ptr;
 
-        let (_, input_memory_values) = rt.mr_slice(input_ptr, WIDTH);
-        let mut state: [F; WIDTH] = input_memory_values
-            .into_iter()
-            .map(F::from_wrapped_u32)
-            .collect::<Vec<F>>()
+        let mut state_read_records = Vec::new();
+        let mut state_write_records = Vec::new();
+
+        let (state_records, state_values) = rt.mr_slice(input_ptr, STATE_NUM_WORDS);
+        state_read_records.extend_from_slice(&state_records);
+
+        let mut state: [BabyBear; WIDTH] = state_values
+            .chunks_exact(2)
+            .map(|v| {
+                let least_sig = v[0];
+                let most_sig = v[1];
+                BabyBear::from_wrapped_u64(least_sig as u64 + ((most_sig as u64) << 32))
+            })
+            .collect::<Vec<BabyBear>>()
             .try_into()
             .unwrap();
 
@@ -66,19 +73,32 @@ impl Syscall for Poseidon2PermuteSyscall {
         external_linear_layer(&mut state);
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::full_round(&mut state, &RC_16_30_U32[round].map(F::from_wrapped_u32));
+            Self::full_round(&mut state, &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32));
         }
 
         for round in 0..NUM_PARTIAL_ROUNDS {
-            Self::partial_round(&mut state, &RC_16_30_U32[round].map(F::from_wrapped_u32)[0]);
+            Self::partial_round(
+                &mut state,
+                &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32)[0],
+            );
         }
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::full_round(&mut state, &RC_16_30_U32[round].map(F::from_wrapped_u32));
+            Self::full_round(&mut state, &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32));
         }
 
-        let input_memory_records =
-            rt.mw_slice(input_ptr, state.map(|f| f.as_canonical_u32()).as_slice());
+        // Increment the clk by 1 before writing because we read from memory at start_clk.
+        rt.clk += 1;
+
+        let write_records = rt.mw_slice(
+            input_ptr,
+            state
+                .into_iter()
+                .flat_map(|f| [f.as_canonical_u32(), 0])
+                .collect::<Vec<_>>()
+                .as_slice(),
+        );
+        state_write_records.extend_from_slice(&write_records);
 
         // Push the SHA extend event.
         let lookup_id = rt.syscall_lookup_id;
@@ -87,8 +107,10 @@ impl Syscall for Poseidon2PermuteSyscall {
             lookup_id,
             shard,
             clk: clk_init,
+            state_values,
             input_ptr: input_ptr_init,
-            input_memory_records,
+            state_read_records,
+            state_write_records,
             local_mem_access: rt.postprocess(),
         });
         let syscall_event =

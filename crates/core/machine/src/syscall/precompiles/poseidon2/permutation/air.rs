@@ -8,7 +8,7 @@ use p3_matrix::Matrix;
 use sp1_core_executor::syscalls::SyscallCode;
 use sp1_primitives::poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 use sp1_primitives::{external_linear_layer, internal_linear_layer, RC_16_30_U32};
-use sp1_stark::air::{InteractionScope, SP1AirBuilder};
+use sp1_stark::air::{BaseAirBuilder, InteractionScope, SP1AirBuilder};
 
 use super::{
     columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
@@ -36,7 +36,7 @@ where
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         // Load from memory to the state
-        for (i, word) in local.input_memory.iter().enumerate() {
+        for (i, word) in local.input_memory.iter().step_by(2).enumerate() {
             BabyBearWordRangeChecker::<AB::F>::range_check(
                 builder,
                 *word.prev_value(),
@@ -79,10 +79,15 @@ where
         }
 
         // Assert that the permuted state is being written to input_memory.
-        // builder.when(local.is_real).assert_all_eq(
-        //     local.state,
-        //     local.input_memory.into_iter().map(|f| f.value().reduce()).collect(),
-        // );
+        builder.when(local.is_real).assert_all_eq(
+            local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
+            local
+                .input_memory
+                .into_iter()
+                .step_by(2)
+                .map(|f| f.value().reduce::<AB>())
+                .collect::<Vec<AB::Expr>>(),
+        );
 
         // Read and write input_memory.
         builder.eval_memory_access_slice(

@@ -1,1 +1,1 @@
-pub mod permutation;
+pub mod permute;

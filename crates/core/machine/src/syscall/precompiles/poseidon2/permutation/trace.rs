@@ -6,7 +6,7 @@ use crate::utils::pad_rows_fixed;
 use p3_field::PrimeField32;
 use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use sp1_core_executor::{
-    events::{ByteRecord, MemoryRecordEnum, Poseidon2PermuteEvent, PrecompileEvent},
+    events::{ByteRecord, Poseidon2PermuteEvent, PrecompileEvent},
     syscalls::SyscallCode,
     ExecutionRecord, Program,
 };
@@ -118,12 +118,20 @@ impl Poseidon2PermuteChip {
         cols.input_ptr = F::from_canonical_u32(event.input_ptr);
 
         // Populate memory columns.
-        for i in 0..WIDTH {
-            cols.input_memory[i]
-                .populate(MemoryRecordEnum::Write(event.input_memory_records[i]), blu);
-            cols.input_range_checker[i].populate(event.input_memory_records[i].prev_value);
-            cols.state[i] = F::from_canonical_u32(event.input_memory_records[i].prev_value);
+        for (i, read_record) in event.state_read_records.iter().enumerate() {
+            cols.input_memory[i].populate_read(event.state_read_records[i], blu);
+            blu.add_u8_range_checks(event.shard, &read_record.value.to_le_bytes());
         }
+
+        cols.state = event
+            .state_values
+            .iter()
+            .step_by(2)
+            .cloned()
+            .map(F::from_wrapped_u32)
+            .collect::<Vec<F>>()
+            .try_into()
+            .unwrap();
 
         // Perform permutation on the state
         external_linear_layer(&mut cols.state);
@@ -150,6 +158,11 @@ impl Poseidon2PermuteChip {
                 &mut cols.ending_full_rounds[round],
                 &RC_16_30_U32[round].map(F::from_wrapped_u32),
             );
+        }
+
+        for (i, write_record) in event.state_write_records.iter().enumerate() {
+            cols.input_memory[i].populate_write(*write_record, blu);
+            blu.add_u8_range_checks(event.shard, &write_record.value.to_le_bytes());
         }
     }
 
