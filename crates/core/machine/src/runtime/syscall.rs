@@ -356,6 +356,7 @@ pub fn default_syscall_map() -> HashMap<SyscallCode, Arc<dyn Syscall>> {
     syscall_map
         .insert(SyscallCode::ED_DECOMPRESS, Arc::new(EdDecompressChip::<Ed25519Parameters>::new()));
     syscall_map.insert(SyscallCode::KECCAK_PERMUTE, Arc::new(KeccakPermuteChip::new()));
+    syscall_map.insert(SyscallCode::POSEIDON2_PERMUTE, Arc::new(Poseidon2PermuteChip::new()));
     syscall_map
         .insert(SyscallCode::SECP256K1_ADD, Arc::new(WeierstrassAddAssignChip::<Secp256k1>::new()));
     syscall_map.insert(
