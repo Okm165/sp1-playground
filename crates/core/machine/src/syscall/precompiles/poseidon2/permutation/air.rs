@@ -34,10 +34,10 @@ where
         builder.when_first_row().assert_zero(local.nonce);
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
-        // // Load from memory to the state
-        // for (i, word) in local.input_memory.iter().step_by(2).enumerate() {
-        //     builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
-        // }
+        // Load from memory to the state
+        for (i, word) in local.input_memory.into_iter().enumerate() {
+            builder.assert_eq(local.state[i], word.value().reduce::<AB>());
+        }
 
         // let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
@@ -88,9 +88,18 @@ where
         // Read and write input_memory.
         builder.eval_memory_access_slice(
             local.shard,
-            local.clk.into() + AB::Expr::one(),
+            local.clk.into(),
             local.input_ptr,
             &local.input_memory,
+            local.is_real,
+        );
+
+        // Read and write input_memory.
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into() + AB::Expr::one(),
+            local.output_ptr,
+            &local.output_memory,
             local.is_real,
         );
 
@@ -101,7 +110,7 @@ where
             local.nonce,
             AB::F::from_canonical_u32(SyscallCode::POSEIDON2_PERMUTE.syscall_id()),
             local.input_ptr,
-            AB::Expr::zero(),
+            local.output_ptr,
             local.is_real,
             InteractionScope::Local,
         );

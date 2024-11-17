@@ -15,9 +15,6 @@ pub const WIDTH: usize = 16;
 pub const NUM_FULL_ROUNDS: usize = 8;
 pub const NUM_PARTIAL_ROUNDS: usize = 13;
 
-// The permutation state is 16 u64's. Our word size is 32 bits, so it is 32 words.
-pub const STATE_NUM_WORDS: usize = WIDTH * 2;
-
 lazy_static! {
     // These constants are created by a RNG.
 
