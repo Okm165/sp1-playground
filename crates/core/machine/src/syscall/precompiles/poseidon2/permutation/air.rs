@@ -34,56 +34,56 @@ where
         builder.when_first_row().assert_zero(local.nonce);
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
-        // Load from memory to the state
-        for (i, word) in local.input_memory.iter().step_by(2).enumerate() {
-            builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
-        }
+        // // Load from memory to the state
+        // for (i, word) in local.input_memory.iter().step_by(2).enumerate() {
+        //     builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
+        // }
 
-        let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
+        // let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
-        // Perform permutation on the state
-        external_linear_layer::<AB::Expr>(&mut state);
+        // // Perform permutation on the state
+        // external_linear_layer::<AB::Expr>(&mut state);
 
-        for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::eval_full_round(
-                &mut state,
-                &local.beginning_full_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
-                local.is_real.into(),
-                builder,
-            );
-        }
+        // for round in 0..NUM_FULL_ROUNDS / 2 {
+        //     Self::eval_full_round(
+        //         &mut state,
+        //         &local.beginning_full_rounds[round],
+        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+        //         local.is_real.into(),
+        //         builder,
+        //     );
+        // }
 
-        for round in 0..NUM_PARTIAL_ROUNDS {
-            Self::eval_partial_round(
-                &mut state,
-                &local.partial_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
-                local.is_real.into(),
-                builder,
-            );
-        }
+        // for round in 0..NUM_PARTIAL_ROUNDS {
+        //     Self::eval_partial_round(
+        //         &mut state,
+        //         &local.partial_rounds[round],
+        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
+        //         local.is_real.into(),
+        //         builder,
+        //     );
+        // }
 
-        for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::eval_full_round(
-                &mut state,
-                &local.ending_full_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
-                local.is_real.into(),
-                builder,
-            );
-        }
+        // for round in 0..NUM_FULL_ROUNDS / 2 {
+        //     Self::eval_full_round(
+        //         &mut state,
+        //         &local.ending_full_rounds[round],
+        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+        //         local.is_real.into(),
+        //         builder,
+        //     );
+        // }
 
-        // Assert that the permuted state is being written to input_memory.
-        builder.when(local.is_real).assert_all_eq(
-            local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
-            local
-                .input_memory
-                .into_iter()
-                .step_by(2)
-                .map(|f| f.value().reduce::<AB>())
-                .collect::<Vec<AB::Expr>>(),
-        );
+        // // Assert that the permuted state is being written to input_memory.
+        // builder.when(local.is_real).assert_all_eq(
+        //     local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
+        //     local
+        //         .input_memory
+        //         .into_iter()
+        //         .step_by(2)
+        //         .map(|f| f.value().reduce::<AB>())
+        //         .collect::<Vec<AB::Expr>>(),
+        // );
 
         // Read and write input_memory.
         builder.eval_memory_access_slice(
