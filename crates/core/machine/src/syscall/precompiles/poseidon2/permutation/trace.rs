@@ -195,9 +195,7 @@ impl Poseidon2PermuteChip {
             Self::populate_sbox(&mut full_round.sbox[i], s);
         }
         external_linear_layer(state);
-        for (post_i, state_i) in full_round.post.iter_mut().zip(state) {
-            *post_i = *state_i;
-        }
+        full_round.post = *state;
     }
 
     pub fn populate_partial_round<F: PrimeField32>(
@@ -207,10 +205,8 @@ impl Poseidon2PermuteChip {
     ) {
         state[0] = state[0] + *round_constant;
         Self::populate_sbox(&mut partial_round.sbox, &mut state[0]);
-
-        partial_round.post_sbox = state[0];
-
         internal_linear_layer(state);
+        partial_round.post = *state;
     }
 
     #[inline]

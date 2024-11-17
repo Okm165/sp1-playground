@@ -45,5 +45,5 @@ pub struct FullRound<T> {
 #[repr(C)]
 pub struct PartialRound<T> {
     pub sbox: T,
-    pub post_sbox: T,
+    pub post: [T; WIDTH],
 }

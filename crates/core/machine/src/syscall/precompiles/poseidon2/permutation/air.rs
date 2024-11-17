@@ -135,9 +135,7 @@ impl Poseidon2PermuteChip {
             Self::eval_sbox(&full_round.sbox[i], s, is_real.clone(), builder);
         }
         external_linear_layer::<AB::Expr>(state);
-        for (state_i, post_i) in state.iter_mut().zip(full_round.post) {
-            builder.when(is_real.clone()).assert_eq(state_i.clone(), post_i);
-        }
+        builder.when(is_real).assert_all_eq(state.clone(), full_round.post);
     }
 
     pub fn eval_partial_round<AB>(
@@ -151,8 +149,8 @@ impl Poseidon2PermuteChip {
     {
         state[0] = state[0].clone() + *round_constant;
         Self::eval_sbox(&partial_round.sbox, &mut state[0], is_real.clone(), builder);
-        builder.when(is_real).assert_eq(state[0].clone(), partial_round.post_sbox);
         internal_linear_layer::<AB::Expr>(state);
+        builder.when(is_real).assert_all_eq(state.clone(), partial_round.post);
     }
 
     #[inline]
