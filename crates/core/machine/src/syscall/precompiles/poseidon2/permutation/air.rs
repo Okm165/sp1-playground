@@ -1,3 +1,7 @@
+use super::{
+    columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
+    Poseidon2PermuteChip,
+};
 use crate::air::MemoryAirBuilder;
 use crate::memory::MemoryCols;
 use core::borrow::Borrow;
@@ -8,11 +12,6 @@ use sp1_core_executor::syscalls::SyscallCode;
 use sp1_primitives::poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 use sp1_primitives::{external_linear_layer, internal_linear_layer, RC_16_30_U32};
 use sp1_stark::air::{BaseAirBuilder, InteractionScope, SP1AirBuilder};
-
-use super::{
-    columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
-    Poseidon2PermuteChip,
-};
 
 impl<F> BaseAir<F> for Poseidon2PermuteChip {
     fn width(&self) -> usize {
@@ -39,51 +38,51 @@ where
             builder.assert_eq(local.state[i], word.value().reduce::<AB>());
         }
 
-        // let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
+        let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
 
-        // // Perform permutation on the state
-        // external_linear_layer::<AB::Expr>(&mut state);
+        // Perform permutation on the state
+        external_linear_layer::<AB::Expr>(&mut state);
 
-        // for round in 0..NUM_FULL_ROUNDS / 2 {
-        //     Self::eval_full_round(
-        //         &mut state,
-        //         &local.beginning_full_rounds[round],
-        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
-        //         local.is_real.into(),
-        //         builder,
-        //     );
-        // }
+        for round in 0..NUM_FULL_ROUNDS / 2 {
+            Self::eval_full_round(
+                &mut state,
+                &local.beginning_full_rounds[round],
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+                local.is_real.into(),
+                builder,
+            );
+        }
 
-        // for round in 0..NUM_PARTIAL_ROUNDS {
-        //     Self::eval_partial_round(
-        //         &mut state,
-        //         &local.partial_rounds[round],
-        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
-        //         local.is_real.into(),
-        //         builder,
-        //     );
-        // }
+        for round in 0..NUM_PARTIAL_ROUNDS {
+            Self::eval_partial_round(
+                &mut state,
+                &local.partial_rounds[round],
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
+                local.is_real.into(),
+                builder,
+            );
+        }
 
-        // for round in 0..NUM_FULL_ROUNDS / 2 {
-        //     Self::eval_full_round(
-        //         &mut state,
-        //         &local.ending_full_rounds[round],
-        //         &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
-        //         local.is_real.into(),
-        //         builder,
-        //     );
-        // }
+        for round in 0..NUM_FULL_ROUNDS / 2 {
+            Self::eval_full_round(
+                &mut state,
+                &local.ending_full_rounds[round],
+                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+                local.is_real.into(),
+                builder,
+            );
+        }
 
-        // // Assert that the permuted state is being written to input_memory.
-        // builder.when(local.is_real).assert_all_eq(
-        //     local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
-        //     local
-        //         .input_memory
-        //         .into_iter()
-        //         .step_by(2)
-        //         .map(|f| f.value().reduce::<AB>())
-        //         .collect::<Vec<AB::Expr>>(),
-        // );
+        // Assert that the permuted state is being written to input_memory.
+        builder.when(local.is_real).assert_all_eq(
+            local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
+            local
+                .input_memory
+                .into_iter()
+                .step_by(2)
+                .map(|f| f.value().reduce::<AB>())
+                .collect::<Vec<AB::Expr>>(),
+        );
 
         // Read and write input_memory.
         builder.eval_memory_access_slice(
