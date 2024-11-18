@@ -43,7 +43,7 @@ where
         // Perform permutation on the state
         external_linear_layer::<AB::Expr>(&mut state);
 
-        for round in 0..NUM_FULL_ROUNDS / 2 {
+        for round in 0..(NUM_FULL_ROUNDS / 2) {
             Self::eval_full_round(
                 &mut state,
                 &local.beginning_full_rounds[round],
@@ -63,11 +63,11 @@ where
             );
         }
 
-        for round in 0..NUM_FULL_ROUNDS / 2 {
+        for round in 0..(NUM_FULL_ROUNDS / 2) {
             Self::eval_full_round(
                 &mut state,
                 &local.ending_full_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(AB::F::from_wrapped_u32),
                 local.is_real.into(),
                 builder,
             );
@@ -77,9 +77,8 @@ where
         builder.when(local.is_real).assert_all_eq(
             local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
             local
-                .input_memory
+                .output_memory
                 .into_iter()
-                .step_by(2)
                 .map(|f| f.value().reduce::<AB>())
                 .collect::<Vec<AB::Expr>>(),
         );
@@ -134,7 +133,7 @@ impl Poseidon2PermuteChip {
             Self::eval_sbox(&full_round.sbox[i], s, is_real.clone(), builder);
         }
         external_linear_layer::<AB::Expr>(state);
-        builder.when(is_real).assert_all_eq(state.clone(), full_round.post);
+        builder.when(is_real).assert_all_eq(state.clone(), full_round.post.map(|x| x.into()));
     }
 
     pub fn eval_partial_round<AB>(
@@ -149,7 +148,7 @@ impl Poseidon2PermuteChip {
         state[0] = state[0].clone() + *round_constant;
         Self::eval_sbox(&partial_round.sbox, &mut state[0], is_real.clone(), builder);
         internal_linear_layer::<AB::Expr>(state);
-        builder.when(is_real).assert_all_eq(state.clone(), partial_round.post);
+        builder.when(is_real).assert_all_eq(state.clone(), partial_round.post.map(|x| x.into()));
     }
 
     #[inline]

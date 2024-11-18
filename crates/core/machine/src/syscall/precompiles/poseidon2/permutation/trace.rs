@@ -54,8 +54,6 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2PermuteChip {
                     Some(&mut row),
                     &mut new_byte_lookup_events,
                 );
-
-                println!("row: {:#?}", row);
                 row
             })
             .collect::<Vec<_>>();
@@ -134,7 +132,6 @@ impl Poseidon2PermuteChip {
         // Populate memory columns.
         for (i, read_record) in event.state_read_records.iter().enumerate() {
             cols.input_memory[i].populate(*read_record, blu);
-            blu.add_u8_range_checks(event.shard, &read_record.value.to_le_bytes());
         }
 
         let mut state: [F; WIDTH] = event
@@ -171,13 +168,12 @@ impl Poseidon2PermuteChip {
             Self::populate_full_round(
                 &mut state,
                 &mut cols.ending_full_rounds[round],
-                &RC_16_30_U32[round].map(F::from_wrapped_u32),
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(F::from_wrapped_u32),
             );
         }
 
         for (i, write_record) in event.state_write_records.iter().enumerate() {
             cols.output_memory[i].populate(*write_record, blu);
-            blu.add_u8_range_checks(event.shard, &write_record.value.to_le_bytes());
         }
 
         if input_row.as_ref().is_some() {

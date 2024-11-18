@@ -8,9 +8,9 @@ fn main() {
 
     let client = ProverClient::new();
 
-    // // Execute the program using the `ProverClient.execute` method, without generating a proof.
-    // let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
-    // println!("executed program with {} cycles", report.total_instruction_count());
+    // Execute the program using the `ProverClient.execute` method, without generating a proof.
+    let (_, report) = client.execute(ELF, stdin.clone()).run().unwrap();
+    println!("executed program with {} cycles", report.total_instruction_count());
 
     // Generate the proof for the given program and input.
     let (pk, vk) = client.setup(ELF);

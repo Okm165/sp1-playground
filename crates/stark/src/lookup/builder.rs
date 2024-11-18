@@ -94,14 +94,6 @@ impl<F: Field> PairBuilder for InteractionBuilder<F> {
 
 impl<F: Field> MessageBuilder<AirInteraction<SymbolicExpression<F>>> for InteractionBuilder<F> {
     fn send(&mut self, message: AirInteraction<SymbolicExpression<F>>, scope: InteractionScope) {
-        println!(
-            "send - kind: {:?} - id: {:?} - arg1: {:?} - multi: {:?}",
-            message.kind,
-            message.values[3],
-            message.values.get(4),
-            message.multiplicity,
-        );
-
         let values =
             message.values.into_iter().map(|v| symbolic_to_virtual_pair(&v)).collect::<Vec<_>>();
 
@@ -111,14 +103,6 @@ impl<F: Field> MessageBuilder<AirInteraction<SymbolicExpression<F>>> for Interac
     }
 
     fn receive(&mut self, message: AirInteraction<SymbolicExpression<F>>, scope: InteractionScope) {
-        println!(
-            "recv - kind: {:?} - id: {:?} - arg1: {:?} - multi: {:?}",
-            message.kind,
-            message.values[3],
-            message.values.get(4),
-            message.multiplicity,
-        );
-
         let values =
             message.values.into_iter().map(|v| symbolic_to_virtual_pair(&v)).collect::<Vec<_>>();
 

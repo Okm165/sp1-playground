@@ -19,7 +19,6 @@ pub struct Poseidon2PermuteCols<T> {
     pub output_ptr: T,
     pub output_memory: [MemoryWriteCols<T>; WIDTH],
 
-    // pub input_range_checker: [BabyBearWordRangeChecker<T>; WIDTH],
     pub state: [T; WIDTH],
 
     /// Beginning Full Rounds

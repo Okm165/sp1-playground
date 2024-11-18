@@ -79,7 +79,10 @@ impl Syscall for Poseidon2PermuteSyscall {
         }
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::full_round(&mut state, &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32));
+            Self::full_round(
+                &mut state,
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(BabyBear::from_wrapped_u32),
+            );
         }
 
         // Increment the clk by 1 before writing because we read from memory at start_clk.
