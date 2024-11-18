@@ -6,7 +6,7 @@ use p3_baby_bear::BabyBear;
 use p3_field::{AbstractField, PrimeField32};
 use sp1_primitives::{
     external_linear_layer, internal_linear_layer, NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS,
-    RC_16_30_U32, STATE_NUM_WORDS, WIDTH,
+    RC_16_30_U32, WIDTH,
 };
 
 pub(crate) struct Poseidon2PermuteSyscall;
@@ -48,23 +48,18 @@ impl Syscall for Poseidon2PermuteSyscall {
     ) -> Option<u32> {
         let clk_init = rt.clk;
         let input_ptr = arg1;
-        assert!(arg2 == 0, "arg2 must be 0");
-
-        let input_ptr_init = input_ptr;
+        let output_ptr = arg2;
 
         let mut state_read_records = Vec::new();
         let mut state_write_records = Vec::new();
 
-        let (state_records, state_values) = rt.mr_slice(input_ptr, STATE_NUM_WORDS);
+        let (state_records, state_values) = rt.mr_slice(input_ptr, WIDTH);
         state_read_records.extend_from_slice(&state_records);
 
         let mut state: [BabyBear; WIDTH] = state_values
-            .chunks_exact(2)
-            .map(|v| {
-                let least_sig = v[0];
-                let most_sig = v[1];
-                BabyBear::from_wrapped_u64(least_sig as u64 + ((most_sig as u64) << 32))
-            })
+            .clone()
+            .into_iter()
+            .map(BabyBear::from_wrapped_u32)
             .collect::<Vec<BabyBear>>()
             .try_into()
             .unwrap();
@@ -84,19 +79,18 @@ impl Syscall for Poseidon2PermuteSyscall {
         }
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
-            Self::full_round(&mut state, &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32));
+            Self::full_round(
+                &mut state,
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(BabyBear::from_wrapped_u32),
+            );
         }
 
         // Increment the clk by 1 before writing because we read from memory at start_clk.
         rt.clk += 1;
 
         let write_records = rt.mw_slice(
-            input_ptr,
-            state
-                .into_iter()
-                .flat_map(|f| [f.as_canonical_u32(), 0])
-                .collect::<Vec<_>>()
-                .as_slice(),
+            output_ptr,
+            state.into_iter().map(|f| f.as_canonical_u32()).collect::<Vec<_>>().as_slice(),
         );
         state_write_records.extend_from_slice(&write_records);
 
@@ -108,7 +102,8 @@ impl Syscall for Poseidon2PermuteSyscall {
             shard,
             clk: clk_init,
             state_values,
-            input_ptr: input_ptr_init,
+            input_ptr,
+            output_ptr,
             state_read_records,
             state_write_records,
             local_mem_access: rt.postprocess(),

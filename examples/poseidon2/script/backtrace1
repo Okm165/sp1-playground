@@ -1,0 +1,54 @@
+thread '<unnamed>' panicked at /home/bartosz/.cargo/git/checkouts/plonky3-2a8c63bcd5ef83b0/db3d45d/fri/src/two_adic_pcs.rs:139:9:
+assertion failed: lde.height() >= domain.size()
+stack backtrace:
+   0:     0x558120a72895 - <std::sys::backtrace::BacktraceLock::print::DisplayBacktrace as core::fmt::Display>::fmt::h1b9dad2a88e955ff
+   1:     0x558120a9e79b - core::fmt::write::h4b5a1270214bc4a7
+   2:     0x558120a6f29f - std::io::Write::write_fmt::hd04af345a50c312d
+   3:     0x558120a73c11 - std::panicking::default_hook::{{closure}}::h96ab15e9936be7ed
+   4:     0x558120a738ec - std::panicking::default_hook::h3cacb9c27561ad33
+   5:     0x558120a74271 - std::panicking::rust_panic_with_hook::hfe205f6954b2c97b
+   6:     0x558120a740a3 - std::panicking::begin_panic_handler::{{closure}}::h6cb44b3a50f28c44
+   7:     0x558120a72d59 - std::sys::backtrace::__rust_end_short_backtrace::hf1c1f2a92799bb0e
+   8:     0x558120a73d64 - rust_begin_unwind
+   9:     0x55811fdc4d93 - core::panicking::panic_fmt::h3d8fc78294164da7
+  10:     0x55811fdc4e1c - core::panicking::panic::hec978767ec2d35ff
+  11:     0x5581203d33dd - <p3_fri::two_adic_pcs::TwoAdicFriPcs<Val,Dft,InputMmcs,FriMmcs> as p3_commit::pcs::Pcs<Challenge,Challenger>>::get_evaluations_on_domain::h7aa6074f0c36b684
+  12:     0x5581200f1237 - core::ops::function::impls::<impl core::ops::function::FnMut<A> for &F>::call_mut::ha716253731090062
+  13:     0x558120091d6d - rayon::iter::plumbing::bridge_producer_consumer::helper::h04e27727a0adaa05
+  14:     0x55811fed23fc - <rayon_core::job::StackJob<L,F,R> as rayon_core::job::Job>::execute::h063e307310271592
+  15:     0x55811fdc0f56 - rayon_core::registry::WorkerThread::wait_until_cold::h911d06e0eec8e82a
+  16:     0x558120a2d692 - rayon_core::registry::ThreadBuilder::run::h59f85b446a1089b0
+  17:     0x558120a32a8a - std::sys::backtrace::__rust_begin_short_backtrace::hc8d3034c505b9c36
+  18:     0x558120a321e2 - core::ops::function::FnOnce::call_once{{vtable.shim}}::hf0457c01cf45b7b7
+  19:     0x558120a79a3b - std::sys::pal::unix::thread::Thread::new::thread_start::ha8af9c992ef0b208
+  20:     0x7f1aadc8a6d7 - start_thread
+  21:     0x7f1aadd0e60c - __clone3
+  22:                0x0 - <unknown>
+thread 'main' panicked at /home/bartosz/workshop/succinct/sp1/crates/core/machine/src/utils/prove.rs:663:52:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+stack backtrace:
+   0:     0x558120a72895 - <std::sys::backtrace::BacktraceLock::print::DisplayBacktrace as core::fmt::Display>::fmt::h1b9dad2a88e955ff
+   1:     0x558120a9e79b - core::fmt::write::h4b5a1270214bc4a7
+   2:     0x558120a6f29f - std::io::Write::write_fmt::hd04af345a50c312d
+   3:     0x558120a73c11 - std::panicking::default_hook::{{closure}}::h96ab15e9936be7ed
+   4:     0x558120a738ec - std::panicking::default_hook::h3cacb9c27561ad33
+   5:     0x558120a74271 - std::panicking::rust_panic_with_hook::hfe205f6954b2c97b
+   6:     0x558120a740d7 - std::panicking::begin_panic_handler::{{closure}}::h6cb44b3a50f28c44
+   7:     0x558120a72d59 - std::sys::backtrace::__rust_end_short_backtrace::hf1c1f2a92799bb0e
+   8:     0x558120a73d64 - rust_begin_unwind
+   9:     0x55811fdc4d93 - core::panicking::panic_fmt::h3d8fc78294164da7
+  10:     0x55811fdc5266 - core::result::unwrap_failed::hfa79a499befff387
+  11:     0x5581200d6a4f - sp1_core_machine::utils::prove::prove_with_context::{{closure}}::hda1ffbff3e02ea56
+  12:     0x5581200ef37d - std::thread::scoped::scope::hc8bed61f09039951
+  13:     0x55811fdcc693 - sp1_prover::SP1Prover<C>::prove_core::h631da5b72a342d40
+  14:     0x5581202fdb9d - <sp1_sdk::provers::cpu::CpuProver as sp1_sdk::provers::Prover<sp1_prover::components::DefaultProverComponents>>::prove::hc8bf9205859b27e4
+  15:     0x558120116e46 - sp1_sdk::action::Prove::run::h5d38cdde9c535506
+  16:     0x55811fdc9e24 - poseidon2_script::main::h3f3d53dfddf8f282
+  17:     0x55811fdc8253 - std::sys::backtrace::__rust_begin_short_backtrace::hdb7784493804a65d
+  18:     0x55811fdc8249 - std::rt::lang_start::{{closure}}::h3fbe16f9f81da1c7
+  19:     0x558120a66250 - std::rt::lang_start_internal::h5e7c81cecd7f0954
+  20:     0x55811fdca275 - main
+  21:     0x7f1aadc1d088 - __libc_start_call_main
+  22:     0x7f1aadc1d14b - __libc_start_main@@GLIBC_2.34
+  23:     0x55811fdc5625 - _start
+  24:                0x0 - <unknown>
