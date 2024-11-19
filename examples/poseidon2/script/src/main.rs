@@ -16,7 +16,7 @@ fn main() {
     let (pk, vk) = client.setup(ELF);
     let proof = client.prove(&pk, stdin).run().unwrap();
     println!("generated proof");
-    
+
     client.verify(&proof, &vk).unwrap();
     println!("verified proof");
 }

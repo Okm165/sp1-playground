@@ -47,13 +47,12 @@ impl Syscall for Poseidon2PermuteSyscall {
         arg2: u32,
     ) -> Option<u32> {
         let clk_init = rt.clk;
-        let input_ptr = arg1;
-        let output_ptr = arg2;
+        let memory_ptr = arg1;
 
         let mut state_read_records = Vec::new();
         let mut state_write_records = Vec::new();
 
-        let (state_records, state_values) = rt.mr_slice(input_ptr, WIDTH);
+        let (state_records, state_values) = rt.mr_slice(memory_ptr, WIDTH);
         state_read_records.extend_from_slice(&state_records);
 
         let mut state: [BabyBear; WIDTH] = state_values
@@ -89,7 +88,7 @@ impl Syscall for Poseidon2PermuteSyscall {
         rt.clk += 1;
 
         let write_records = rt.mw_slice(
-            output_ptr,
+            memory_ptr,
             state.into_iter().map(|f| f.as_canonical_u32()).collect::<Vec<_>>().as_slice(),
         );
         state_write_records.extend_from_slice(&write_records);
@@ -102,8 +101,7 @@ impl Syscall for Poseidon2PermuteSyscall {
             shard,
             clk: clk_init,
             state_values,
-            input_ptr,
-            output_ptr,
+            memory_ptr,
             state_read_records,
             state_write_records,
             local_mem_access: rt.postprocess(),

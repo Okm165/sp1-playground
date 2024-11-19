@@ -14,10 +14,8 @@ pub struct Poseidon2PermuteEvent {
     pub clk: u32,
     /// State
     pub state_values: Vec<u32>,
-    /// The pointer to the input value.
-    pub input_ptr: u32,
-    /// The pointer to the output value.
-    pub output_ptr: u32,
+    /// The pointer to the memory.
+    pub memory_ptr: u32,
     /// The memory records for the pre-state.
     pub state_read_records: Vec<MemoryReadRecord>,
     /// The memory records for the post-state.

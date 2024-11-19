@@ -6,8 +6,6 @@ sp1_zkvm::entrypoint!(main);
 
 pub fn main() {
     let mut state = [10_u32; 16];
-    let mut permuted = [0_u32; 16];
-    syscall_poseidon2_permute(&mut state, &mut permuted);
+    syscall_poseidon2_permute(&mut state);
     println!("{:?}", state);
-    println!("{:?}", permuted);
 }

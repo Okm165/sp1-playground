@@ -126,12 +126,11 @@ impl Poseidon2PermuteChip {
         cols.is_real = F::one();
         cols.shard = F::from_canonical_u32(event.shard);
         cols.clk = F::from_canonical_u32(event.clk);
-        cols.input_ptr = F::from_canonical_u32(event.input_ptr);
-        cols.output_ptr = F::from_canonical_u32(event.output_ptr);
+        cols.memory_ptr = F::from_canonical_u32(event.memory_ptr);
 
         // Populate memory columns.
         for (i, read_record) in event.state_read_records.iter().enumerate() {
-            cols.input_memory[i].populate(*read_record, blu);
+            cols.memory[i].populate_read(*read_record, blu);
         }
 
         let mut state: [F; WIDTH] = event
@@ -173,7 +172,7 @@ impl Poseidon2PermuteChip {
         }
 
         for (i, write_record) in event.state_write_records.iter().enumerate() {
-            cols.output_memory[i].populate(*write_record, blu);
+            cols.memory[i].populate_write(*write_record, blu);
         }
 
         if input_row.as_ref().is_some() {

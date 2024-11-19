@@ -34,8 +34,8 @@ where
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         // Load from memory to the state
-        for (i, word) in local.input_memory.into_iter().enumerate() {
-            builder.assert_eq(local.state[i], word.value().reduce::<AB>());
+        for (i, word) in local.memory.iter().enumerate() {
+            builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
         }
 
         let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
@@ -76,28 +76,15 @@ where
         // Assert that the permuted state is being written to input_memory.
         builder.when(local.is_real).assert_all_eq(
             local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
-            local
-                .output_memory
-                .into_iter()
-                .map(|f| f.value().reduce::<AB>())
-                .collect::<Vec<AB::Expr>>(),
-        );
-
-        // Read and write input_memory.
-        builder.eval_memory_access_slice(
-            local.shard,
-            local.clk.into(),
-            local.input_ptr,
-            &local.input_memory,
-            local.is_real,
+            local.memory.into_iter().map(|f| f.value().reduce::<AB>()).collect::<Vec<AB::Expr>>(),
         );
 
         // Read and write input_memory.
         builder.eval_memory_access_slice(
             local.shard,
             local.clk.into() + AB::Expr::one(),
-            local.output_ptr,
-            &local.output_memory,
+            local.memory_ptr,
+            &local.memory,
             local.is_real,
         );
 
@@ -107,8 +94,8 @@ where
             local.clk,
             local.nonce,
             AB::F::from_canonical_u32(SyscallCode::POSEIDON2_PERMUTE.syscall_id()),
-            local.input_ptr,
-            local.output_ptr,
+            local.memory_ptr,
+            AB::Expr::zero(),
             local.is_real,
             InteractionScope::Local,
         );
