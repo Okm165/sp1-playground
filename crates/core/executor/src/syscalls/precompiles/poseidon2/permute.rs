@@ -17,14 +17,12 @@ impl Poseidon2PermuteSyscall {
             *s += *r;
             Self::sbox(s);
         }
-
         external_linear_layer(state);
     }
 
     pub fn partial_round<F: PrimeField32>(state: &mut [F; WIDTH], round_constant: &F) {
         state[0] += *round_constant;
         Self::sbox(&mut state[0]);
-
         internal_linear_layer(state);
     }
 
@@ -74,14 +72,15 @@ impl Syscall for Poseidon2PermuteSyscall {
         for round in 0..NUM_PARTIAL_ROUNDS {
             Self::partial_round(
                 &mut state,
-                &RC_16_30_U32[round].map(BabyBear::from_wrapped_u32)[0],
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(BabyBear::from_wrapped_u32)[0],
             );
         }
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::full_round(
                 &mut state,
-                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(BabyBear::from_wrapped_u32),
+                &RC_16_30_U32[round + NUM_PARTIAL_ROUNDS + NUM_FULL_ROUNDS / 2]
+                    .map(BabyBear::from_wrapped_u32),
             );
         }
 

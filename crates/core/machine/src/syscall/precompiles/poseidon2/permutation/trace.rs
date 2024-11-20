@@ -161,7 +161,7 @@ impl Poseidon2PermuteChip {
             Self::populate_partial_round(
                 &mut state,
                 &mut cols.partial_rounds[round],
-                &RC_16_30_U32[round].map(F::from_wrapped_u32)[0],
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(F::from_wrapped_u32)[0],
             );
         }
 
@@ -169,7 +169,8 @@ impl Poseidon2PermuteChip {
             Self::populate_full_round(
                 &mut state,
                 &mut cols.ending_full_rounds[round],
-                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(F::from_wrapped_u32),
+                &RC_16_30_U32[round + NUM_PARTIAL_ROUNDS + NUM_FULL_ROUNDS / 2]
+                    .map(F::from_wrapped_u32),
             );
         }
 

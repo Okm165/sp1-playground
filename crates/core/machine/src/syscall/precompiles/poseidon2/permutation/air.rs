@@ -59,7 +59,7 @@ where
             Self::eval_partial_round(
                 &state,
                 &local.partial_rounds[round],
-                &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
+                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(AB::F::from_wrapped_u32)[0],
                 builder,
             );
             state = local.partial_rounds[round].post.map(|x| x.into());
@@ -69,7 +69,8 @@ where
             Self::eval_full_round(
                 &state,
                 &local.ending_full_rounds[round],
-                &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(AB::F::from_wrapped_u32),
+                &RC_16_30_U32[round + NUM_PARTIAL_ROUNDS + NUM_FULL_ROUNDS / 2]
+                    .map(AB::F::from_wrapped_u32),
                 builder,
             );
             state = local.ending_full_rounds[round].post.map(|x| x.into());
