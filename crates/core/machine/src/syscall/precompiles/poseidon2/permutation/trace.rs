@@ -126,11 +126,12 @@ impl Poseidon2PermuteChip {
         cols.is_real = F::one();
         cols.shard = F::from_canonical_u32(event.shard);
         cols.clk = F::from_canonical_u32(event.clk);
-        cols.memory_ptr = F::from_canonical_u32(event.memory_ptr);
+        cols.input_memory_ptr = F::from_canonical_u32(event.input_memory_ptr);
+        cols.output_memory_ptr = F::from_canonical_u32(event.output_memory_ptr);
 
         // Populate memory columns.
         for (i, read_record) in event.state_read_records.iter().enumerate() {
-            cols.memory[i].populate_read(*read_record, blu);
+            cols.input_memory[i].populate(*read_record, blu);
         }
 
         let mut state: [F; WIDTH] = event
@@ -142,10 +143,11 @@ impl Poseidon2PermuteChip {
             .try_into()
             .unwrap();
 
-        cols.state = state;
+        cols.input_state = state;
 
         // Perform permutation on the state
         external_linear_layer(&mut state);
+        cols.state_linear_layer = state;
 
         for round in 0..NUM_FULL_ROUNDS / 2 {
             Self::populate_full_round(
@@ -172,7 +174,7 @@ impl Poseidon2PermuteChip {
         }
 
         for (i, write_record) in event.state_write_records.iter().enumerate() {
-            cols.memory[i].populate_write(*write_record, blu);
+            cols.output_memory[i].populate(*write_record, blu);
         }
 
         if input_row.as_ref().is_some() {
@@ -187,7 +189,7 @@ impl Poseidon2PermuteChip {
     ) {
         for (i, (s, r)) in state.iter_mut().zip(round_constants.iter()).enumerate() {
             *s = *s + *r;
-            Self::populate_sbox(&mut full_round.sbox[i], s);
+            Self::populate_sbox(&mut full_round.sbox_x3[i], &mut full_round.sbox_x7[i], s);
         }
         external_linear_layer(state);
         full_round.post = *state;
@@ -199,14 +201,15 @@ impl Poseidon2PermuteChip {
         round_constant: &F,
     ) {
         state[0] = state[0] + *round_constant;
-        Self::populate_sbox(&mut partial_round.sbox, &mut state[0]);
+        Self::populate_sbox(&mut partial_round.sbox_x3, &mut partial_round.sbox_x7, &mut state[0]);
         internal_linear_layer(state);
         partial_round.post = *state;
     }
 
     #[inline]
-    pub fn populate_sbox<F: PrimeField32>(sbox: &mut F, x: &mut F) {
-        *x = x.exp_const_u64::<7>();
-        *sbox = *x;
+    pub fn populate_sbox<F: PrimeField32>(sbox_x3: &mut F, sbox_x7: &mut F, x: &mut F) {
+        *sbox_x3 = x.cube();
+        *sbox_x7 = sbox_x3.square() * *x;
+        *x = *sbox_x7
     }
 }

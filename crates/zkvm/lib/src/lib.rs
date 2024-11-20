@@ -73,7 +73,7 @@ extern "C" {
     pub fn syscall_uint256_mulmod(x: *mut [u32; 8], y: *const [u32; 8]);
 
     /// Executes an uint256 multiplication on the given inputs.
-    pub fn syscall_poseidon2_permute(state: *mut [u64; 16]);
+    pub fn syscall_poseidon2_permute(x: *const [u32; 16], y: *mut [u32; 16]);
 
     /// Enters unconstrained mode.
     pub fn syscall_enter_unconstrained() -> bool;

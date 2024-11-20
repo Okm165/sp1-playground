@@ -2,8 +2,7 @@ use super::{
     columns::{FullRound, PartialRound, Poseidon2PermuteCols, NUM_POSEIDON2_PERMUTE_COLS},
     Poseidon2PermuteChip,
 };
-use crate::air::MemoryAirBuilder;
-use crate::memory::MemoryCols;
+use crate::{air::MemoryAirBuilder, memory::MemoryCols};
 use core::borrow::Borrow;
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_field::AbstractField;
@@ -11,7 +10,7 @@ use p3_matrix::Matrix;
 use sp1_core_executor::syscalls::SyscallCode;
 use sp1_primitives::poseidon2::{NUM_FULL_ROUNDS, NUM_PARTIAL_ROUNDS, WIDTH};
 use sp1_primitives::{external_linear_layer, internal_linear_layer, RC_16_30_U32};
-use sp1_stark::air::{BaseAirBuilder, InteractionScope, SP1AirBuilder};
+use sp1_stark::air::{InteractionScope, SP1AirBuilder};
 
 impl<F> BaseAir<F> for Poseidon2PermuteChip {
     fn width(&self) -> usize {
@@ -34,57 +33,73 @@ where
         builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         // Load from memory to the state
-        for (i, word) in local.memory.iter().enumerate() {
-            builder.assert_eq(local.state[i], word.prev_value().reduce::<AB>());
+        for (i, word) in local.input_memory.iter().enumerate() {
+            builder.assert_eq(local.input_state[i], word.value().reduce::<AB>());
         }
 
-        let mut state: [AB::Expr; WIDTH] = local.state.map(|x| x.into());
+        let mut state: [AB::Expr; WIDTH] = local.input_state.map(|x| x.into());
 
         // Perform permutation on the state
         external_linear_layer::<AB::Expr>(&mut state);
+        builder.assert_all_eq(state, local.state_linear_layer.map(|x| x.into()));
+
+        state = local.state_linear_layer.map(|x| x.into());
 
         for round in 0..(NUM_FULL_ROUNDS / 2) {
             Self::eval_full_round(
-                &mut state,
+                &state,
                 &local.beginning_full_rounds[round],
                 &RC_16_30_U32[round].map(AB::F::from_wrapped_u32),
-                local.is_real.into(),
                 builder,
             );
+            state = local.beginning_full_rounds[round].post.map(|x| x.into());
         }
 
         for round in 0..NUM_PARTIAL_ROUNDS {
             Self::eval_partial_round(
-                &mut state,
+                &state,
                 &local.partial_rounds[round],
                 &RC_16_30_U32[round].map(AB::F::from_wrapped_u32)[0],
-                local.is_real.into(),
                 builder,
             );
+            state = local.partial_rounds[round].post.map(|x| x.into());
         }
 
         for round in 0..(NUM_FULL_ROUNDS / 2) {
             Self::eval_full_round(
-                &mut state,
+                &state,
                 &local.ending_full_rounds[round],
                 &RC_16_30_U32[round + NUM_FULL_ROUNDS / 2].map(AB::F::from_wrapped_u32),
-                local.is_real.into(),
                 builder,
             );
+            state = local.ending_full_rounds[round].post.map(|x| x.into());
         }
 
         // Assert that the permuted state is being written to input_memory.
-        builder.when(local.is_real).assert_all_eq(
-            local.state.into_iter().map(|f| f.into()).collect::<Vec<AB::Expr>>(),
-            local.memory.into_iter().map(|f| f.value().reduce::<AB>()).collect::<Vec<AB::Expr>>(),
+        builder.assert_all_eq(
+            state.into_iter().collect::<Vec<AB::Expr>>(),
+            local
+                .output_memory
+                .into_iter()
+                .map(|f| f.value().reduce::<AB>())
+                .collect::<Vec<AB::Expr>>(),
         );
 
-        // Read and write input_memory.
+        // Read input_memory.
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into(),
+            local.input_memory_ptr,
+            &local.input_memory,
+            local.is_real,
+        );
+
+        // Write output_memory.
         builder.eval_memory_access_slice(
             local.shard,
             local.clk.into() + AB::Expr::one(),
-            local.memory_ptr,
-            &local.memory,
+            local.output_memory_ptr,
+            &local.output_memory,
             local.is_real,
         );
 
@@ -94,8 +109,8 @@ where
             local.clk,
             local.nonce,
             AB::F::from_canonical_u32(SyscallCode::POSEIDON2_PERMUTE.syscall_id()),
-            local.memory_ptr,
-            AB::Expr::zero(),
+            local.input_memory_ptr,
+            local.output_memory_ptr,
             local.is_real,
             InteractionScope::Local,
         );
@@ -107,43 +122,53 @@ where
 
 impl Poseidon2PermuteChip {
     pub fn eval_full_round<AB>(
-        state: &mut [AB::Expr; WIDTH],
+        state: &[AB::Expr; WIDTH],
         full_round: &FullRound<AB::Var>,
         round_constants: &[AB::F; WIDTH],
-        is_real: AB::Expr,
         builder: &mut AB,
     ) where
         AB: SP1AirBuilder,
     {
-        for (i, (s, r)) in state.iter_mut().zip(round_constants.iter()).enumerate() {
-            *s = s.clone() + *r;
-            Self::eval_sbox(&full_round.sbox[i], s, is_real.clone(), builder);
+        for (i, (s, r)) in state.iter().zip(round_constants.iter()).enumerate() {
+            Self::eval_sbox(
+                &full_round.sbox_x3[i],
+                &full_round.sbox_x7[i],
+                &(s.clone() + *r),
+                builder,
+            );
         }
-        external_linear_layer::<AB::Expr>(state);
-        builder.when(is_real).assert_all_eq(state.clone(), full_round.post.map(|x| x.into()));
+        let mut commited_sbox_x7 = full_round.sbox_x7.map(|x| x.into());
+        external_linear_layer::<AB::Expr>(&mut commited_sbox_x7);
+        builder.assert_all_eq(commited_sbox_x7, full_round.post);
     }
 
     pub fn eval_partial_round<AB>(
-        state: &mut [AB::Expr; WIDTH],
+        state: &[AB::Expr; WIDTH],
         partial_round: &PartialRound<AB::Var>,
         round_constant: &AB::F,
-        is_real: AB::Expr,
         builder: &mut AB,
     ) where
         AB: SP1AirBuilder,
     {
-        state[0] = state[0].clone() + *round_constant;
-        Self::eval_sbox(&partial_round.sbox, &mut state[0], is_real.clone(), builder);
-        internal_linear_layer::<AB::Expr>(state);
-        builder.when(is_real).assert_all_eq(state.clone(), partial_round.post.map(|x| x.into()));
+        Self::eval_sbox(
+            &partial_round.sbox_x3,
+            &partial_round.sbox_x7,
+            &(state[0].clone() + *round_constant),
+            builder,
+        );
+        let mut commited_state = state.clone();
+        commited_state[0] = partial_round.sbox_x7.into();
+        internal_linear_layer::<AB::Expr>(&mut commited_state);
+        builder.assert_all_eq(commited_state, partial_round.post.map(|x| x.into()));
     }
 
     #[inline]
-    pub fn eval_sbox<AB>(sbox: &AB::Var, x: &mut AB::Expr, is_real: AB::Expr, builder: &mut AB)
+    pub fn eval_sbox<AB>(sbox_x3: &AB::Var, sbox_x7: &AB::Var, x: &AB::Expr, builder: &mut AB)
     where
         AB: AirBuilder,
     {
-        *x = x.exp_const_u64::<7>();
-        builder.when(is_real).assert_eq(*sbox, x.clone());
+        let committed_x3: AB::Expr = (*sbox_x3).into();
+        let committed_x7: AB::Expr = (*sbox_x7).into();
+        builder.assert_eq(committed_x7.clone(), committed_x3.square() * x.clone());
     }
 }
