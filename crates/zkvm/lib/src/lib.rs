@@ -7,6 +7,7 @@ pub mod bls12381;
 pub mod bn254;
 pub mod ed25519;
 pub mod io;
+pub mod poseidon_hash;
 pub mod secp256k1;
 pub mod secp256r1;
 pub mod unconstrained;

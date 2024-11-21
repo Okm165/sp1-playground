@@ -5574,6 +5574,8 @@ name = "sp1-lib"
 version = "3.0.0"
 dependencies = [
  "bincode",
+ "p3-baby-bear",
+ "p3-field",
  "serde",
 ]
 

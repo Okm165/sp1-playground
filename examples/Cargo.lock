@@ -3921,6 +3921,8 @@ checksum = "cc9c68a3f6da06753e9335d63e27f6b9754dd1920d941135b7ea8224f141adb2"
 name = "poseidon2-program"
 version = "1.1.0"
 dependencies = [
+ "p3-baby-bear",
+ "p3-field",
  "sp1-lib 3.0.0",
  "sp1-zkvm",
 ]
@@ -5846,6 +5848,8 @@ name = "sp1-lib"
 version = "3.0.0"
 dependencies = [
  "bincode",
+ "p3-baby-bear",
+ "p3-field",
  "serde",
 ]
 

@@ -7,3 +7,5 @@ publish = false
 [dependencies]
 sp1-zkvm = { workspace = true }
 sp1-lib = { workspace = true }
+p3-field = { workspace = true }
+p3-baby-bear = { workspace = true }
