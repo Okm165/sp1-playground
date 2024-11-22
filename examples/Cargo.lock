@@ -3918,7 +3918,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc9c68a3f6da06753e9335d63e27f6b9754dd1920d941135b7ea8224f141adb2"
 
 [[package]]
-name = "poseidon2-program"
+name = "poseidon2-merkle-tree-program"
 version = "1.1.0"
 dependencies = [
  "p3-baby-bear",
@@ -3928,7 +3928,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "poseidon2-script"
+name = "poseidon2-merkle-tree-script"
 version = "0.1.0"
 dependencies = [
  "sp1-build",

@@ -1,5 +1,5 @@
 use sp1_sdk::{include_elf, utils, ProverClient, SP1Stdin};
-pub const ELF: &[u8] = include_elf!("poseidon2-program");
+pub const ELF: &[u8] = include_elf!("poseidon2-merkle-tree-program");
 
 fn main() {
     utils::setup_logger();
