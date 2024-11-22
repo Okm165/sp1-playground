@@ -138,9 +138,9 @@ impl Poseidon2PermuteChip {
                 builder,
             );
         }
-        let mut commited_sbox_x7 = full_round.sbox_x7.map(|x| x.into());
-        external_linear_layer::<AB::Expr>(&mut commited_sbox_x7);
-        builder.assert_all_eq(commited_sbox_x7, full_round.post);
+        let mut committed_sbox_x7 = full_round.sbox_x7.map(|x| x.into());
+        external_linear_layer::<AB::Expr>(&mut committed_sbox_x7);
+        builder.assert_all_eq(committed_sbox_x7, full_round.post);
     }
 
     pub fn eval_partial_round<AB>(
@@ -157,10 +157,10 @@ impl Poseidon2PermuteChip {
             &(state[0].clone() + *round_constant),
             builder,
         );
-        let mut commited_state = state.clone();
-        commited_state[0] = partial_round.sbox_x7.into();
-        internal_linear_layer::<AB::Expr>(&mut commited_state);
-        builder.assert_all_eq(commited_state, partial_round.post.map(|x| x.into()));
+        let mut committed_state = state.clone();
+        committed_state[0] = partial_round.sbox_x7.into();
+        internal_linear_layer::<AB::Expr>(&mut committed_state);
+        builder.assert_all_eq(committed_state, partial_round.post.map(|x| x.into()));
     }
 
     #[inline]
