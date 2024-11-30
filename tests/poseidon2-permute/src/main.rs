@@ -1,21 +1,27 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
+use p3_baby_bear::BabyBear;
+use p3_field::{self, AbstractField, PrimeField32};
+use p3_symmetric::Permutation;
+use sp1_primitives::poseidon2_init;
 use sp1_zkvm::syscalls::syscall_poseidon2_permute;
 
 pub fn main() {
-    for _ in 0..25 {
-        let input: [u32; 16] = (0..16).collect::<Vec<u32>>().try_into().unwrap();
-        let mut output = [0; 16];
-        syscall_poseidon2_permute(&input, &mut output);
-        println!("{:?}", output);
-        assert_eq!(
-            output,
-            // Output generated with https://github.com/HorizenLabs/poseidon2 POSEIDON2_BABYBEAR_16_PARAMS
-            [
-                896560466, 771677727, 128113032, 1378976435, 160019712, 1452738514, 682850273,
-                223500421, 501450187, 1804685789, 1671399593, 1788755219, 1736880027, 1352180784,
-                1928489698, 1128802977
-            ]
-        );
+    let input: [u32; 16] = (0..16).collect::<Vec<u32>>().try_into().unwrap();
+    let mut state_precompile = input.clone();
+    let mut state_native = input.clone();
+    for _ in 0..20 {
+        let mut out: [u32; 16] = [0; 16];
+        syscall_poseidon2_permute(&state_precompile, &mut out);
+        state_precompile = out;
     }
+
+    let poseidon = poseidon2_init();
+    for _ in 0..20 {
+        state_native = poseidon
+            .permute(state_native.map(BabyBear::from_canonical_u32))
+            .map(|f| f.as_canonical_u32());
+    }
+
+    assert_eq!(state_precompile, state_native);
 }

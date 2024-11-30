@@ -1400,6 +1400,10 @@ checksum = "cc9c68a3f6da06753e9335d63e27f6b9754dd1920d941135b7ea8224f141adb2"
 name = "poseidon2-permute-test"
 version = "1.1.0"
 dependencies = [
+ "p3-baby-bear",
+ "p3-field",
+ "p3-symmetric",
+ "sp1-primitives",
  "sp1-zkvm",
 ]
 
