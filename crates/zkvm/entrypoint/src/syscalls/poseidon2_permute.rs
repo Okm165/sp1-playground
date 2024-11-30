@@ -9,14 +9,14 @@ use core::arch::asm;
 /// byte boundary.
 #[allow(unused_variables)]
 #[no_mangle]
-pub extern "C" fn syscall_poseidon2_permute(x: *const [u32; 16], y: *mut [u32; 16]) {
+pub extern "C" fn syscall_poseidon2_permute(input: *const [u32; 16], output: *mut [u32; 16]) {
     #[cfg(target_os = "zkvm")]
     unsafe {
         asm!(
             "ecall",
             in("t0") crate::syscalls::POSEIDON2_PERMUTE,
-            in("a0") x,
-            in("a1") y
+            in("a0") input,
+            in("a1") output
         );
     }
 
