@@ -17,7 +17,10 @@ pub mod permute_tests {
     use sp1_core_executor::{syscalls::SyscallCode, Executor, Instruction, Opcode, Program};
     use sp1_stark::{CpuProver, SP1CoreOpts};
 
-    use crate::utils::{self, run_test, tests::POSEIDON2_PERMUTE_ELF};
+    use crate::utils::{
+        self, run_test,
+        tests::{POSEIDON2_ELF, POSEIDON2_PERMUTE_ELF},
+    };
 
     pub fn poseidon2_permute_program() -> Program {
         let input_ptr = 100;
@@ -58,6 +61,13 @@ pub mod permute_tests {
     fn test_poseidon2_permute_program_prove() {
         utils::setup_logger();
         let program = Program::from(POSEIDON2_PERMUTE_ELF).unwrap();
+        run_test::<CpuProver<_, _>>(program).unwrap();
+    }
+
+    #[test]
+    fn test_poseidon2_hash_program_prove() {
+        utils::setup_logger();
+        let program = Program::from(POSEIDON2_ELF).unwrap();
         run_test::<CpuProver<_, _>>(program).unwrap();
     }
 }

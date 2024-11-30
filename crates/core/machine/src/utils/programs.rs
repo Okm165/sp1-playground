@@ -112,4 +112,7 @@ pub mod tests {
 
     pub const POSEIDON2_PERMUTE_ELF: &[u8] =
         include_bytes!("../../../../../tests/poseidon2-permute/elf/riscv32im-succinct-zkvm-elf");
+
+    pub const POSEIDON2_ELF: &[u8] =
+        include_bytes!("../../../../../tests/poseidon2/elf/riscv32im-succinct-zkvm-elf");
 }

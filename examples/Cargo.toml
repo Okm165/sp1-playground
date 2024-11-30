@@ -33,8 +33,8 @@ members = [
   "ssz-withdrawals/script",
   "tendermint/program",
   "tendermint/script",
-  "poseidon2-merkle-tree/program",
-  "poseidon2-merkle-tree/script",
+  "poseidon2/program",
+  "poseidon2/script",
 ]
 resolver = "2"
 
@@ -63,6 +63,7 @@ sp1-lib = { path = "../crates/zkvm/lib", default-features = false }
 sp1-zkvm = { path = "../crates/zkvm/entrypoint", default-features = false }
 p3-field = { git = "https://github.com/Plonky3/Plonky3", branch = "sp1-v4" }
 p3-baby-bear = { git = "https://github.com/Plonky3/Plonky3", branch = "sp1-v4" }
+p3-symmetric = { git = "https://github.com/Plonky3/Plonky3", branch = "sp1-v4" }
 
 [patch.crates-io]
 curve25519-dalek = { git = "https://github.com/sp1-patches/curve25519-dalek", tag = "curve25519_dalek-v4.1.3-patch-v1" }
