@@ -109,4 +109,7 @@ pub mod tests {
 
     pub const PANIC_ELF: &[u8] =
         include_bytes!("../../../../../tests/panic/elf/riscv32im-succinct-zkvm-elf");
+
+    pub const POSEIDON2_PERMUTE_ELF: &[u8] =
+        include_bytes!("../../../../../tests/poseidon2-permute/elf/riscv32im-succinct-zkvm-elf");
 }
