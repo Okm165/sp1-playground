@@ -1400,6 +1400,22 @@ checksum = "cc9c68a3f6da06753e9335d63e27f6b9754dd1920d941135b7ea8224f141adb2"
 name = "poseidon2-permute-test"
 version = "1.1.0"
 dependencies = [
+ "p3-baby-bear",
+ "p3-field",
+ "p3-symmetric",
+ "sp1-primitives",
+ "sp1-zkvm",
+]
+
+[[package]]
+name = "poseidon2-test"
+version = "1.1.0"
+dependencies = [
+ "p3-baby-bear",
+ "p3-field",
+ "p3-symmetric",
+ "sp1-lib 3.0.0",
+ "sp1-primitives",
  "sp1-zkvm",
 ]
 
@@ -1885,6 +1901,7 @@ name = "sp1-lib"
 version = "3.0.0"
 dependencies = [
  "bincode",
+ "itertools 0.13.0",
  "p3-baby-bear",
  "p3-field",
  "serde",

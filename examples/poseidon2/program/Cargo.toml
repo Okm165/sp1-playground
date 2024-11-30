@@ -1,5 +1,5 @@
 [package]
-name = "poseidon2-merkle-tree-program"
+name = "poseidon2-program"
 version = "1.1.0"
 edition = "2021"
 publish = false
@@ -9,3 +9,5 @@ sp1-zkvm = { workspace = true }
 sp1-lib = { workspace = true }
 p3-field = { workspace = true }
 p3-baby-bear = { workspace = true }
+sp1-primitives = { workspace = true }
+p3-symmetric = { workspace = true }
