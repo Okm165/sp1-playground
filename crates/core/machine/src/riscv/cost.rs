@@ -41,6 +41,11 @@ impl CostEstimator for ExecutionReport {
         total_area += (sha_compress_events as u64) * costs[&RiscvAirDiscriminants::Sha256Compress];
         total_chips += 1;
 
+        let poseidon2_permute_events = self.syscall_counts[SyscallCode::POSEIDON2_PERMUTE];
+        total_area +=
+            (poseidon2_permute_events as u64) * costs[&RiscvAirDiscriminants::Poseidon2Permute];
+        total_chips += 1;
+
         let ed_add_events = self.syscall_counts[SyscallCode::ED_ADD];
         total_area += (ed_add_events as u64) * costs[&RiscvAirDiscriminants::Ed25519Add];
         total_chips += 1;

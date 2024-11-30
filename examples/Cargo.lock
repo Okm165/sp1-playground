@@ -3918,6 +3918,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc9c68a3f6da06753e9335d63e27f6b9754dd1920d941135b7ea8224f141adb2"
 
 [[package]]
+name = "poseidon2-program"
+version = "1.1.0"
+dependencies = [
+ "p3-baby-bear",
+ "p3-field",
+ "p3-symmetric",
+ "sp1-lib 3.0.0",
+ "sp1-primitives",
+ "sp1-zkvm",
+]
+
+[[package]]
+name = "poseidon2-script"
+version = "0.1.0"
+dependencies = [
+ "sp1-build",
+ "sp1-sdk",
+]
+
+[[package]]
 name = "powerfmt"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5703,6 +5723,7 @@ dependencies = [
  "log",
  "nohash-hasher",
  "num",
+ "p3-baby-bear",
  "p3-field",
  "p3-maybe-rayon",
  "rand 0.8.5",
@@ -5829,6 +5850,9 @@ name = "sp1-lib"
 version = "3.0.0"
 dependencies = [
  "bincode",
+ "itertools 0.13.0",
+ "p3-baby-bear",
+ "p3-field",
  "serde",
 ]
 

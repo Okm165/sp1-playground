@@ -7,6 +7,7 @@ pub mod bls12381;
 pub mod bn254;
 pub mod ed25519;
 pub mod io;
+pub mod poseidon2;
 pub mod secp256k1;
 pub mod secp256r1;
 pub mod unconstrained;
@@ -71,6 +72,9 @@ extern "C" {
 
     /// Executes an uint256 multiplication on the given inputs.
     pub fn syscall_uint256_mulmod(x: *mut [u32; 8], y: *const [u32; 8]);
+
+    /// Executes an uint256 multiplication on the given inputs.
+    pub fn syscall_poseidon2_permute(x: *const [u32; 16], y: *mut [u32; 16]);
 
     /// Enters unconstrained mode.
     pub fn syscall_enter_unconstrained() -> bool;
